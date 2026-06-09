@@ -2,9 +2,9 @@ import Loja from "./pages/Loja";
 import Admin from "./pages/Admin";
 
 function App() {
-  const caminho = window.location.pathname;
+  const params = new URLSearchParams(window.location.search);
 
-  if (caminho === "/admin") {
+  if (params.get("admin") === "true") {
     return <Admin />;
   }
 
