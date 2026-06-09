@@ -1,5 +1,5 @@
 import Loja from "./pages/Loja";
-import Admin from "./pages/Admin";
+import Admin from "./Admin";
 
 function App() {
   const params = new URLSearchParams(window.location.search);
