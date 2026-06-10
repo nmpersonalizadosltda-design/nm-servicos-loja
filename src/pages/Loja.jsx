@@ -442,9 +442,20 @@ ${dados.description}`;
                </>
         )}
 
-        <div id="avaliar">
-          <ReviewForm corPrincipal={corPrincipal} />
-        </div>
+<div
+  id="avaliar"
+  style={{
+    background: "red",
+    color: "white",
+    padding: "40px",
+    textAlign: "center",
+    margin: "40px 0",
+    fontSize: "30px",
+    fontWeight: "900",
+  }}
+>
+  TESTE FORMULÁRIO
+</div>
 
         <section
   style={{
