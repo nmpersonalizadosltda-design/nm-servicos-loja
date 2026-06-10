@@ -30,6 +30,7 @@ export default function Loja() {
   const [busca, setBusca] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
   const [produtoAberto, setProdutoAberto] = useState(null);
+  const [midiaIndex, setMidiaIndex] = useState(0);
   const [formularioAberto, setFormularioAberto] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [salvandoSolicitacao, setSalvandoSolicitacao] = useState(false);
@@ -104,6 +105,139 @@ export default function Loja() {
 
   function imagemProduto(produto) {
     return produto.image_url_1 || produto.image_url || produto.photo_url || "";
+  }
+
+  function imagensProduto(produto) {
+    if (!produto) return [];
+
+    const urls = [
+      produto.image_url_1,
+      produto.image_url_2,
+      produto.image_url_3,
+      produto.image_url_4,
+      produto.image_url_5,
+      produto.image_url,
+      produto.photo_url,
+    ]
+      .filter(Boolean)
+      .map((url) => String(url).trim())
+      .filter(Boolean);
+
+    return [...new Set(urls)];
+  }
+
+  function videoProduto(produto) {
+    return (
+      produto?.video_url ||
+      produto?.video ||
+      produto?.video_link ||
+      produto?.reel_url ||
+      ""
+    );
+  }
+
+  function abrirDetalhesProduto(produto) {
+    setMidiaIndex(0);
+    setProdutoAberto(produto);
+  }
+
+  function midiasProduto(produto) {
+    const imagens = imagensProduto(produto).map((url) => ({
+      type: "image",
+      url,
+    }));
+
+    const video = videoProduto(produto);
+
+    if (video) {
+      imagens.push({
+        type: "video",
+        url: video,
+      });
+    }
+
+    return imagens;
+  }
+
+  function proximaMidia(total) {
+    setMidiaIndex((prev) => (prev + 1) % total);
+  }
+
+  function midiaAnterior(total) {
+    setMidiaIndex((prev) => (prev - 1 + total) % total);
+  }
+
+  function renderizarTextoFormatado(texto) {
+    const conteudo = String(texto || "").trim();
+
+    if (!conteudo) {
+      return (
+        <p style={modalTextoParagrafo}>
+          Produto personalizado feito sob encomenda.
+        </p>
+      );
+    }
+
+    const linhas = conteudo.split(/\r?\n/);
+    const blocos = [];
+    let listaAtual = [];
+
+    function renderInline(linha, keyPrefix) {
+      return linha.split(/(\*\*.*?\*\*)/g).map((parte, index) => {
+        if (parte.startsWith("**") && parte.endsWith("**")) {
+          return (
+            <strong key={`${keyPrefix}-bold-${index}`}>
+              {parte.slice(2, -2)}
+            </strong>
+          );
+        }
+
+        return <span key={`${keyPrefix}-${index}`}>{parte}</span>;
+      });
+    }
+
+    function fecharLista(key) {
+      if (!listaAtual.length) return;
+
+      const itens = [...listaAtual];
+      listaAtual = [];
+
+      blocos.push(
+        <ul key={`lista-${key}`} style={modalListaFormatada}>
+          {itens.map((linha, index) => (
+            <li key={`item-${key}-${index}`}>
+              {renderInline(linha, `li-${key}-${index}`)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    linhas.forEach((linhaOriginal, index) => {
+      const linha = linhaOriginal.trim();
+
+      if (!linha) {
+        fecharLista(index);
+        return;
+      }
+
+      if (linha.startsWith("- ") || linha.startsWith("• ")) {
+        listaAtual.push(linha.replace(/^[-•]\s*/, ""));
+        return;
+      }
+
+      fecharLista(index);
+
+      blocos.push(
+        <p key={`p-${index}`} style={modalTextoParagrafo}>
+          {renderInline(linha, `p-${index}`)}
+        </p>
+      );
+    });
+
+    fecharLista("fim");
+
+    return blocos;
   }
 
   function atualizarSolicitacao(campo, valor) {
@@ -354,7 +488,7 @@ ${dados.description}`;
                   corPrincipal={corPrincipal}
                   formatarPreco={formatarPreco}
                   imagemProduto={imagemProduto}
-                  onDetalhes={() => setProdutoAberto(produto)}
+                  onDetalhes={() => abrirDetalhesProduto(produto)}
                   onWhatsApp={() => abrirFormularioPedido(produto)}
                 />
               ))}
@@ -381,7 +515,7 @@ ${dados.description}`;
                   corPrincipal={corPrincipal}
                   formatarPreco={formatarPreco}
                   imagemProduto={imagemProduto}
-                  onDetalhes={() => setProdutoAberto(produto)}
+                  onDetalhes={() => abrirDetalhesProduto(produto)}
                   onWhatsApp={() => abrirFormularioPedido(produto)}
                 />
               ))
@@ -438,20 +572,19 @@ ${dados.description}`;
                 )}
               </div>
             </section>
-
-               </>
+              </>
         )}
 
-<div id="avaliar">
-  <ReviewForm corPrincipal={corPrincipal} />
-</div>
+        <div id="avaliar">
+          <ReviewForm corPrincipal={corPrincipal} />
+        </div>
 
         <section
-  style={{
-    ...ctaFinal,
-    background: `linear-gradient(135deg, ${corPrincipal}, ${corSecundaria})`,
-  }}
->
+          style={{
+            ...ctaFinal,
+            background: `linear-gradient(135deg, ${corPrincipal}, ${corSecundaria})`,
+          }}
+        >
           <div>
             <h2>Quer um produto personalizado?</h2>
             <p>Me chama no WhatsApp e vamos transformar sua ideia em algo único.</p>
@@ -591,39 +724,142 @@ ${dados.description}`;
               ×
             </button>
 
-            <div style={modalGrid}>
-              <div style={modalImagemBox}>
-                {imagemProduto(produtoAberto) ? (
-                  <img src={imagemProduto(produtoAberto)} alt={produtoAberto.name} style={modalImagem} />
-                ) : (
-                  <div style={semImagem}>✨</div>
-                )}
-              </div>
+            {(() => {
+              const midias = midiasProduto(produtoAberto);
+              const midiaAtual = midias[midiaIndex] || null;
+              const descricao =
+                produtoAberto.full_description ||
+                produtoAberto.description ||
+                produtoAberto.short_description ||
+                "";
 
-              <div>
-                <span style={{ ...tag, color: corPrincipal }}>
-                  {produtoAberto.category || "Personalizado"}
-                </span>
+              return (
+                <div style={modalGrid}>
+                  <div style={modalImagemBox}>
+                    {midiaAtual ? (
+                      midiaAtual.type === "video" ? (
+                        <video
+                          src={midiaAtual.url}
+                          controls
+                          style={modalVideo}
+                        />
+                      ) : (
+                        <img
+                          src={midiaAtual.url}
+                          alt={produtoAberto.name}
+                          style={modalImagem}
+                        />
+                      )
+                    ) : (
+                      <div style={semImagem}>✨</div>
+                    )}
 
-                <h2>{produtoAberto.name}</h2>
-                <p>{produtoAberto.full_description || produtoAberto.short_description}</p>
+                    {midias.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          style={{ ...setaCarrossel, left: "12px" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            midiaAnterior(midias.length);
+                          }}
+                        >
+                          ‹
+                        </button>
 
-                {config.show_prices && (
-                  <h3 style={{ color: corPrincipal }}>{formatarPreco(produtoAberto.price)}</h3>
-                )}
+                        <button
+                          type="button"
+                          style={{ ...setaCarrossel, right: "12px" }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            proximaMidia(midias.length);
+                          }}
+                        >
+                          ›
+                        </button>
 
-                <ul style={listaDetalhes}>
-                  {produtoAberto.production_time && <li>Prazo: {produtoAberto.production_time}</li>}
-                  {produtoAberto.size && <li>Tamanho: {produtoAberto.size}</li>}
-                  {produtoAberto.finish && <li>Acabamento: {produtoAberto.finish}</li>}
-                  {produtoAberto.personalization && <li>{produtoAberto.personalization}</li>}
-                </ul>
+                        <div style={contadorMidia}>
+                          {midiaIndex + 1} / {midias.length}
+                        </div>
+                      </>
+                    )}
+                  </div>
 
-                <button onClick={() => abrirFormularioPedido(produtoAberto)} style={{ ...botaoRosaGrande, background: corPrincipal }}>
-                  💬 Pedir pelo WhatsApp
-                </button>
-              </div>
-            </div>
+                  {midias.length > 1 && (
+                    <div style={miniaturasBox}>
+                      {midias.map((midia, index) => (
+                        <button
+                          key={`${midia.url}-${index}`}
+                          type="button"
+                          onClick={() => setMidiaIndex(index)}
+                          style={{
+                            ...miniaturaBotao,
+                            borderColor:
+                              index === midiaIndex ? corPrincipal : "#f6cfe0",
+                          }}
+                        >
+                          {midia.type === "video" ? (
+                            <span style={miniaturaVideo}>▶</span>
+                          ) : (
+                            <img
+                              src={midia.url}
+                              alt={`Imagem ${index + 1}`}
+                              style={miniaturaImagem}
+                            />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div style={modalConteudo}>
+                    <span style={{ ...tag, color: corPrincipal }}>
+                      {produtoAberto.category || "Personalizado"}
+                    </span>
+
+                    <h2 style={modalTitulo}>{produtoAberto.name}</h2>
+
+                    {config.show_prices && (
+                      <h3 style={{ ...modalPreco, color: corPrincipal }}>
+                        {formatarPreco(produtoAberto.price)}
+                      </h3>
+                    )}
+
+                    <div style={modalDescricaoBox}>
+                      {renderizarTextoFormatado(descricao)}
+                    </div>
+
+                    <ul style={listaDetalhes}>
+                      {produtoAberto.production_time && (
+                        <li>
+                          <strong>Prazo:</strong> {produtoAberto.production_time}
+                        </li>
+                      )}
+                      {produtoAberto.size && (
+                        <li>
+                          <strong>Tamanho:</strong> {produtoAberto.size}
+                        </li>
+                      )}
+                      {produtoAberto.finish && (
+                        <li>
+                          <strong>Acabamento:</strong> {produtoAberto.finish}
+                        </li>
+                      )}
+                      {produtoAberto.personalization && (
+                        <li>{produtoAberto.personalization}</li>
+                      )}
+                    </ul>
+
+                    <button
+                      onClick={() => abrirFormularioPedido(produtoAberto)}
+                      style={{ ...botaoRosaGrande, background: corPrincipal }}
+                    >
+                      💬 Pedir pelo WhatsApp
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -795,12 +1031,156 @@ const leadTextarea = {
 };
 
 const modalOverlay = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "grid", placeItems: "center", padding: "20px" };
-const modal = { background: "#fff", borderRadius: "24px", padding: "24px", width: "min(900px, 96vw)", position: "relative" };
+const modal = {
+  background: "#fff",
+  borderRadius: "24px",
+  padding: "24px",
+  width: "min(980px, 96vw)",
+  maxHeight: "92vh",
+  overflowY: "auto",
+  position: "relative",
+};
 const fecharModal = { position: "absolute", right: "18px", top: "14px", border: "none", background: "#ffe3ef", color: "#ec1971", borderRadius: "50%", width: "36px", height: "36px", fontSize: "22px", cursor: "pointer" };
-const modalGrid = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "28px" };
-const modalImagemBox = { background: "#ffe5f0", borderRadius: "18px", overflow: "hidden", minHeight: "360px" };
-const modalImagem = { width: "100%", height: "100%", objectFit: "cover" };
-const listaDetalhes = { lineHeight: "1.8", color: "#68495a" };
+const modalGrid = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)",
+  gap: "28px",
+  alignItems: "start",
+};
+const modalImagemBox = {
+  background: "#fff4f9",
+  border: "1px solid #f6cfe0",
+  borderRadius: "18px",
+  overflow: "hidden",
+  minHeight: "420px",
+  height: "min(62vh, 560px)",
+  position: "relative",
+  display: "grid",
+  placeItems: "center",
+};
+const modalImagem = {
+  width: "100%",
+  height: "100%",
+  objectFit: "contain",
+  display: "block",
+  background: "#fff4f9",
+};
+const modalVideo = {
+  width: "100%",
+  height: "100%",
+  objectFit: "contain",
+  background: "#000",
+};
+
+const setaCarrossel = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  width: "42px",
+  height: "42px",
+  borderRadius: "50%",
+  border: "none",
+  background: "rgba(236,25,113,0.92)",
+  color: "#fff",
+  fontSize: "32px",
+  lineHeight: "1",
+  cursor: "pointer",
+  display: "grid",
+  placeItems: "center",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+};
+
+const contadorMidia = {
+  position: "absolute",
+  right: "14px",
+  bottom: "14px",
+  background: "rgba(0,0,0,0.55)",
+  color: "#fff",
+  borderRadius: "999px",
+  padding: "6px 12px",
+  fontSize: "12px",
+  fontWeight: "900",
+};
+
+const miniaturasBox = {
+  gridColumn: "1 / 2",
+  display: "flex",
+  gap: "10px",
+  overflowX: "auto",
+  paddingBottom: "4px",
+};
+
+const miniaturaBotao = {
+  width: "70px",
+  height: "70px",
+  border: "2px solid #f6cfe0",
+  borderRadius: "14px",
+  overflow: "hidden",
+  background: "#fff4f9",
+  cursor: "pointer",
+  padding: 0,
+  flex: "0 0 auto",
+};
+
+const miniaturaImagem = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+  display: "block",
+};
+
+const miniaturaVideo = {
+  width: "100%",
+  height: "100%",
+  display: "grid",
+  placeItems: "center",
+  color: "#EC1971",
+  fontSize: "24px",
+  fontWeight: "900",
+};
+
+const modalConteudo = {
+  minWidth: 0,
+};
+
+const modalTitulo = {
+  fontSize: "30px",
+  color: "#241925",
+  lineHeight: "1.12",
+  margin: "16px 0 10px",
+};
+
+const modalPreco = {
+  fontSize: "28px",
+  margin: "0 0 18px",
+};
+
+const modalDescricaoBox = {
+  background: "#fff8fb",
+  border: "1px solid #f6cfe0",
+  borderRadius: "18px",
+  padding: "18px",
+  color: "#4d3542",
+  lineHeight: "1.65",
+  maxHeight: "310px",
+  overflowY: "auto",
+  marginBottom: "18px",
+};
+
+const modalTextoParagrafo = {
+  margin: "0 0 12px",
+};
+
+const modalListaFormatada = {
+  margin: "0 0 14px",
+  paddingLeft: "22px",
+};
+const listaDetalhes = {
+  lineHeight: "1.8",
+  color: "#68495a",
+  paddingLeft: "20px",
+  margin: "18px 0",
+};
 const botaoRosaGrande = { width: "100%", border: "none", color: "#fff", padding: "15px", borderRadius: "14px", fontWeight: "900", cursor: "pointer" };
 const vazio = { gridColumn: "1 / -1", background: "#fff", border: "1px dashed #f2bfd5", padding: "35px", borderRadius: "18px", textAlign: "center" };
 const produtoNome = { fontSize: "22px", fontWeight: "900", lineHeight: "1.18", color: "#241925", margin: "18px 0 12px" };
