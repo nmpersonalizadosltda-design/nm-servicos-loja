@@ -296,7 +296,7 @@ ${dados.description}`;
         <nav style={menu}>
           <a href="#produtos">Produtos</a>
           <a href="#como-comprar">Como comprar</a>
-          <a href="#avaliacoes">Avaliações</a>
+          <a href="#avaliar">Avaliar</a>
 
           {config.show_whatsapp_button && (
             <button
@@ -439,7 +439,9 @@ ${dados.description}`;
               </div>
             </section>
 
-            <ReviewForm corPrincipal={corPrincipal} />
+            <div id="avaliar">
+  <ReviewForm corPrincipal={corPrincipal} />
+</div>
           </>
         )}
 
