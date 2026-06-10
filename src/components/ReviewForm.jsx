@@ -66,59 +66,20 @@ export default function ReviewForm({ corPrincipal = "#EC1971" }) {
   }
 
   return (
-    <section style={box}>
-      <div style={tituloBox}>
-        <span style={{ ...etiqueta, color: corPrincipal }}>💬 Avalie sua compra</span>
-        <h2 style={titulo}>Já comprou com a NM?</h2>
-        <p style={texto}>
-          Deixe sua avaliação. Ela será analisada antes de aparecer na loja.
-        </p>
-      </div>
-
-      <form onSubmit={enviarAvaliacao} style={form}>
-        <input
-          style={input}
-          value={dados.name}
-          onChange={(e) => atualizar("name", e.target.value)}
-          placeholder="Seu nome"
-        />
-
-        <input
-          style={input}
-          value={dados.product}
-          onChange={(e) => atualizar("product", e.target.value)}
-          placeholder="Produto comprado"
-        />
-
-        <select
-          style={input}
-          value={dados.rating}
-          onChange={(e) => atualizar("rating", e.target.value)}
-        >
-          <option value="5">⭐⭐⭐⭐⭐ 5 estrelas</option>
-          <option value="4">⭐⭐⭐⭐ 4 estrelas</option>
-          <option value="3">⭐⭐⭐ 3 estrelas</option>
-          <option value="2">⭐⭐ 2 estrelas</option>
-          <option value="1">⭐ 1 estrela</option>
-        </select>
-
-        <textarea
-          style={textarea}
-          value={dados.comment}
-          onChange={(e) => atualizar("comment", e.target.value)}
-          placeholder="Conte como foi sua experiência..."
-        />
-
-        <button
-          type="submit"
-          disabled={salvando}
-          style={{ ...botao, background: corPrincipal }}
-        >
-          {salvando ? "Enviando..." : "Enviar avaliação"}
-        </button>
-      </form>
-    </section>
-  );
+  <div
+    style={{
+      background: "green",
+      color: "#fff",
+      padding: "30px",
+      textAlign: "center",
+      fontSize: "30px",
+      fontWeight: "bold",
+      marginTop: "30px",
+    }}
+  >
+    FORMULÁRIO FUNCIONANDO 🚀
+  </div>
+);
 }
 
 const box = {
