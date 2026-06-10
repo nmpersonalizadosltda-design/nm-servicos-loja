@@ -1033,37 +1033,38 @@ const leadTextarea = {
 const modalOverlay = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "grid", placeItems: "center", padding: "20px" };
 const modal = {
   background: "#fff",
-  borderRadius: "24px",
-  padding: "24px",
-  width: "min(980px, 96vw)",
+  borderRadius: "28px",
+  padding: "28px",
+  width: "min(1180px, 96vw)",
   maxHeight: "92vh",
   overflowY: "auto",
   position: "relative",
+  boxShadow: "0 30px 90px rgba(0,0,0,0.22)",
 };
 const fecharModal = { position: "absolute", right: "18px", top: "14px", border: "none", background: "#ffe3ef", color: "#ec1971", borderRadius: "50%", width: "36px", height: "36px", fontSize: "22px", cursor: "pointer" };
 const modalGrid = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)",
-  gap: "28px",
+  gridTemplateColumns: "minmax(340px, 470px) minmax(360px, 1fr)",
+  gap: "34px",
   alignItems: "start",
 };
 const modalImagemBox = {
-  background: "#fff4f9",
+  background: "#fff",
   border: "1px solid #f6cfe0",
-  borderRadius: "18px",
+  borderRadius: "22px",
   overflow: "hidden",
-  minHeight: "420px",
-  height: "min(62vh, 560px)",
   position: "relative",
+  width: "100%",
+  aspectRatio: "4 / 5",
   display: "grid",
   placeItems: "center",
 };
 const modalImagem = {
   width: "100%",
   height: "100%",
-  objectFit: "contain",
+  objectFit: "cover",
   display: "block",
-  background: "#fff4f9",
+  background: "#fff",
 };
 const modalVideo = {
   width: "100%",
@@ -1107,7 +1108,8 @@ const miniaturasBox = {
   display: "flex",
   gap: "10px",
   overflowX: "auto",
-  paddingBottom: "4px",
+  padding: "2px 0 6px",
+  marginTop: "-18px",
 };
 
 const miniaturaBotao = {
@@ -1141,10 +1143,14 @@ const miniaturaVideo = {
 
 const modalConteudo = {
   minWidth: 0,
+  alignSelf: "start",
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "flex-start",
 };
 
 const modalTitulo = {
-  fontSize: "30px",
+  fontSize: "32px",
   color: "#241925",
   lineHeight: "1.12",
   margin: "16px 0 10px",
@@ -1158,13 +1164,14 @@ const modalPreco = {
 const modalDescricaoBox = {
   background: "#fff8fb",
   border: "1px solid #f6cfe0",
-  borderRadius: "18px",
-  padding: "18px",
+  borderRadius: "20px",
+  padding: "20px",
   color: "#4d3542",
-  lineHeight: "1.65",
-  maxHeight: "310px",
+  lineHeight: "1.7",
+  maxHeight: "430px",
   overflowY: "auto",
   marginBottom: "18px",
+  fontSize: "15px",
 };
 
 const modalTextoParagrafo = {
