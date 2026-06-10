@@ -439,16 +439,14 @@ ${dados.description}`;
               </div>
             </section>
 
-            <div id="avaliar">
-  <ReviewForm corPrincipal={corPrincipal} />
-</div>
-          </>
+               </>
         )}
-<div id="avaliar">
-  <ReviewForm corPrincipal={corPrincipal} />
-</div>
 
-<section
+        <div id="avaliar">
+          <ReviewForm corPrincipal={corPrincipal} />
+        </div>
+
+        <section
   style={{
     ...ctaFinal,
     background: `linear-gradient(135deg, ${corPrincipal}, ${corSecundaria})`,
