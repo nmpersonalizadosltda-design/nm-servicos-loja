@@ -444,13 +444,16 @@ ${dados.description}`;
 </div>
           </>
         )}
+<div id="avaliar">
+  <ReviewForm corPrincipal={corPrincipal} />
+</div>
 
-        <section
-          style={{
-            ...ctaFinal,
-            background: `linear-gradient(135deg, ${corPrincipal}, ${corSecundaria})`,
-          }}
-        >
+<section
+  style={{
+    ...ctaFinal,
+    background: `linear-gradient(135deg, ${corPrincipal}, ${corSecundaria})`,
+  }}
+>
           <div>
             <h2>Quer um produto personalizado?</h2>
             <p>Me chama no WhatsApp e vamos transformar sua ideia em algo único.</p>
