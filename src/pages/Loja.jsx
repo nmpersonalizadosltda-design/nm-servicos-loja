@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { addDoc, collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase/config";
+import ReviewForm from "../components/ReviewForm";
 
 const CONFIG_DOC_ID = "main";
 
@@ -404,35 +405,42 @@ ${dados.description}`;
         </section>
 
         {config.show_reviews && (
-          <section style={avaliacoesBox} id="avaliacoes">
-            <div style={tituloSecao}>
-              <span style={tituloEtiqueta}>⭐ Depoimentos</span>
-              <h2 style={tituloPrincipalSecao}>Quem já comprou e recomenda</h2>
-            </div>
+          <>
+            <section style={avaliacoesBox} id="avaliacoes">
+              <div style={tituloSecao}>
+                <span style={tituloEtiqueta}>⭐ Depoimentos</span>
+                <h2 style={tituloPrincipalSecao}>Quem já comprou e recomenda</h2>
+              </div>
 
-            <div style={avaliacoesGrid}>
-              {avaliacoes.length > 0 ? (
-                avaliacoes.slice(0, 3).map((item) => (
-                  <div key={item.id} style={reviewCard}>
-                    <div style={{ ...estrelas, color: corPrincipal }}>★★★★★</div>
-                    <p>
-                      “
-                      {item.comment ||
-                        item.text ||
-                        "Produto lindo e atendimento impecável."}
-                      ”
-                    </p>
-                    <strong>{item.client_name || item.name || "Cliente NM"}</strong>
-                  </div>
-                ))
-              ) : (
-                <>
-                  <Review texto="Produto lindo e atendimento impecável." />
-                  <Review texto="Ficou perfeito, do jeitinho que eu queria. Atendimento ótimo e acabamento lindo." />
-                </>
-              )}
-            </div>
-          </section>
+              <div style={avaliacoesGrid}>
+                {avaliacoes.filter((item) => item.status === "aprovado").length > 0 ? (
+                  avaliacoes
+                    .filter((item) => item.status === "aprovado")
+                    .slice(0, 3)
+                    .map((item) => (
+                      <div key={item.id} style={reviewCard}>
+                        <div style={{ ...estrelas, color: corPrincipal }}>★★★★★</div>
+                        <p>
+                          “
+                          {item.comment ||
+                            item.text ||
+                            "Produto lindo e atendimento impecável."}
+                          ”
+                        </p>
+                        <strong>{item.client_name || item.name || "Cliente NM"}</strong>
+                      </div>
+                    ))
+                ) : (
+                  <>
+                    <Review texto="Produto lindo e atendimento impecável." />
+                    <Review texto="Ficou perfeito, do jeitinho que eu queria. Atendimento ótimo e acabamento lindo." />
+                  </>
+                )}
+              </div>
+            </section>
+
+            <ReviewForm corPrincipal={corPrincipal} />
+          </>
         )}
 
         <section
