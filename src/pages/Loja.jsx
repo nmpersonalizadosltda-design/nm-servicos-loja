@@ -1144,9 +1144,13 @@ const miniaturaVideo = {
 const modalConteudo = {
   minWidth: 0,
   alignSelf: "start",
+  gridColumn: "2 / 3",
+  gridRow: "1 / 3",
   display: "flex",
   flexDirection: "column",
   justifyContent: "flex-start",
+  alignItems: "stretch",
+  paddingTop: "0px",
 };
 
 const modalTitulo = {
