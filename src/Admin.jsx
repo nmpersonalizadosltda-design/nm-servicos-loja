@@ -314,9 +314,11 @@ function formatarMoeda(valor) {
 const layout = {
   display: "flex",
   minHeight: "100vh",
+  width: "100vw",
   background: "#fff8fb",
   color: "#1f1f29",
   fontFamily: "Inter, Arial, sans-serif",
+  overflowX: "hidden",
 };
 
 const sidebar = {
@@ -377,10 +379,11 @@ const verLoja = {
 
 const conteudo = {
   marginLeft: "260px",
-  width: "calc(100% - 260px)",
+  width: "calc(100vw - 260px)",
   minHeight: "100vh",
   padding: "48px 60px",
   boxSizing: "border-box",
+  background: "#fff8fb",
 };
 
 const dashboard = {
