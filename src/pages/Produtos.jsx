@@ -29,6 +29,9 @@ const produtoInicial = {
   highlight_2: "Personalização completa",
   highlight_3: "Produção artesanal",
   highlight_4: "Atendimento pelo WhatsApp",
+  has_variations: false,
+  variation_label: "Tamanho",
+  variations: [],
   available: true,
   featured: false,
 };
@@ -133,6 +136,15 @@ export default function Produtos() {
       highlight_2: produtoSelecionado.highlight_2 || "Personalização completa",
       highlight_3: produtoSelecionado.highlight_3 || "Produção artesanal",
       highlight_4: produtoSelecionado.highlight_4 || "Atendimento pelo WhatsApp",
+      has_variations: produtoSelecionado.has_variations ?? false,
+      variation_label: produtoSelecionado.variation_label || "Tamanho",
+      variations: Array.isArray(produtoSelecionado.variations)
+        ? produtoSelecionado.variations.map((item) => ({
+            name: item.name || "",
+            price: item.price ?? "",
+            description: item.description || "",
+          }))
+        : [],
       available: produtoSelecionado.available ?? true,
       featured: produtoSelecionado.featured ?? false,
     });
@@ -176,6 +188,56 @@ export default function Produtos() {
     window.open(url, "_blank");
   }
 
+  function adicionarVariacao() {
+    setProduto((prev) => ({
+      ...prev,
+      has_variations: true,
+      variation_label: prev.variation_label || "Tamanho",
+      variations: [
+        ...(Array.isArray(prev.variations) ? prev.variations : []),
+        { name: "", price: "", description: "" },
+      ],
+    }));
+  }
+
+  function atualizarVariacao(index, campo, valor) {
+    setProduto((prev) => {
+      const lista = Array.isArray(prev.variations) ? [...prev.variations] : [];
+      lista[index] = {
+        ...(lista[index] || { name: "", price: "", description: "" }),
+        [campo]: valor,
+      };
+
+      return {
+        ...prev,
+        variations: lista,
+      };
+    });
+  }
+
+  function removerVariacao(index) {
+    setProduto((prev) => {
+      const lista = Array.isArray(prev.variations) ? [...prev.variations] : [];
+      lista.splice(index, 1);
+
+      return {
+        ...prev,
+        variations: lista,
+        has_variations: lista.length > 0 ? prev.has_variations : false,
+      };
+    });
+  }
+
+  function variacoesValidas() {
+    return (produto.variations || [])
+      .filter((item) => String(item.name || "").trim())
+      .map((item) => ({
+        name: String(item.name || "").trim(),
+        price: Number(item.price || 0),
+        description: String(item.description || "").trim(),
+      }));
+  }
+
   async function salvarProduto(e) {
     e.preventDefault();
 
@@ -184,10 +246,21 @@ export default function Produtos() {
       return;
     }
 
-    if (!produto.price) {
+    const variacoesLimpas = variacoesValidas();
+
+    if (produto.has_variations && variacoesLimpas.length === 0) {
+      alert("Adicione pelo menos uma variação com nome.");
+      return;
+    }
+
+    if (!produto.price && !produto.has_variations) {
       alert("Preencha o preço do produto.");
       return;
     }
+
+    const menorPrecoVariacao = variacoesLimpas.length
+      ? Math.min(...variacoesLimpas.map((item) => Number(item.price || 0)))
+      : 0;
 
     setSalvando(true);
 
@@ -195,7 +268,10 @@ export default function Produtos() {
       const dadosProduto = {
         ...produto,
         slug: produto.slug || gerarSlug(produto.name),
-        price: Number(produto.price || 0),
+        price: Number(produto.price || menorPrecoVariacao || 0),
+        has_variations: Boolean(produto.has_variations),
+        variation_label: produto.variation_label || "Tamanho",
+        variations: produto.has_variations ? variacoesLimpas : [],
         updated_at: new Date(),
       };
 
@@ -242,6 +318,7 @@ export default function Produtos() {
 
   const totalDisponiveis = produtos.filter((item) => item.available).length;
   const totalDestaques = produtos.filter((item) => item.featured).length;
+  const totalComVariacoes = produtos.filter((item) => item.has_variations).length;
 
   function renderCampoUrl(campo, label, tipo = "imagem") {
     const valor = produto[campo];
@@ -312,6 +389,10 @@ export default function Produtos() {
           <strong>{totalDestaques}</strong>
           <span>Em destaque</span>
         </div>
+        <div style={resumoCard}>
+          <strong>{totalComVariacoes}</strong>
+          <span>Com variações</span>
+        </div>
       </div>
 
       <div style={cardBusca}>
@@ -370,12 +451,20 @@ export default function Produtos() {
                     <span style={badgeClaro}>{item.category || "Sem categoria"}</span>
                     <span style={item.available ? badgeVerde : badgeCinza}>{item.available ? "Disponível" : "Indisponível"}</span>
                     {item.featured && <span style={badgeRosa}>Destaque</span>}
+                    {item.has_variations && (
+                      <span style={badgeRoxo}>
+                        {item.variations?.length || 0} variação(ões)
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div style={produtoAcoesArea}>
-                <strong style={{ color: "#ec1971", fontSize: 18 }}>{formatarPreco(item.price)}</strong>
+                <strong style={{ color: "#ec1971", fontSize: 18 }}>
+                  {item.has_variations ? "A partir de " : ""}
+                  {formatarPreco(item.price)}
+                </strong>
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                   <button type="button" onClick={() => editarProduto(item)} style={botaoIcone}>✏️</button>
                   <button type="button" onClick={() => excluirProduto(item.id)} style={botaoIcone}>🗑️</button>
@@ -468,6 +557,108 @@ export default function Produtos() {
                 placeholder="Detalhes, materiais, tamanhos e personalização"
               />
 
+              <h3 style={subtituloBloco}>Variações do produto</h3>
+              <div style={variacoesBox}>
+                <label style={checkboxVariacao}>
+                  <input
+                    type="checkbox"
+                    checked={produto.has_variations}
+                    onChange={(e) => {
+                      const marcado = e.target.checked;
+                      setProduto((prev) => ({
+                        ...prev,
+                        has_variations: marcado,
+                        variation_label: prev.variation_label || "Tamanho",
+                        variations:
+                          marcado && (!prev.variations || prev.variations.length === 0)
+                            ? [{ name: "", price: prev.price || "", description: "" }]
+                            : prev.variations || [],
+                      }));
+                    }}
+                  />
+                  Este produto possui variações
+                </label>
+
+                {produto.has_variations && (
+                  <>
+                    <div style={formGridDuasColunas}>
+                      <div>
+                        <label>Nome da variação</label>
+                        <input
+                          value={produto.variation_label}
+                          onChange={(e) => atualizarProduto("variation_label", e.target.value)}
+                          style={campoEstilo}
+                          placeholder="Ex: Tamanho, Modelo, Formato"
+                        />
+                      </div>
+
+                      <div>
+                        <label>Preço base do anúncio</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={produto.price}
+                          onChange={(e) => atualizarProduto("price", e.target.value)}
+                          style={campoEstilo}
+                          placeholder="Ex: menor valor para aparecer como a partir de"
+                        />
+                      </div>
+                    </div>
+
+                    <div style={variacoesLista}>
+                      {(produto.variations || []).map((variacao, index) => (
+                        <div key={`variacao-${index}`} style={variacaoLinha}>
+                          <div style={variacaoNumero}>{index + 1}</div>
+
+                          <input
+                            value={variacao.name}
+                            onChange={(e) => atualizarVariacao(index, "name", e.target.value)}
+                            style={{ ...campoEstilo, marginBottom: 0 }}
+                            placeholder="Ex: 25mm, Agenda A5, Chaveiro dupla face"
+                          />
+
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={variacao.price}
+                            onChange={(e) => atualizarVariacao(index, "price", e.target.value)}
+                            style={{ ...campoEstilo, marginBottom: 0 }}
+                            placeholder="Preço"
+                          />
+
+                          <input
+                            value={variacao.description}
+                            onChange={(e) => atualizarVariacao(index, "description", e.target.value)}
+                            style={{ ...campoEstilo, marginBottom: 0 }}
+                            placeholder="Observação opcional"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => removerVariacao(index)}
+                            style={botaoRemoverVariacao}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={adicionarVariacao}
+                      style={botaoAdicionarVariacao}
+                    >
+                      + Adicionar variação
+                    </button>
+
+                    <p style={ajudaVariacao}>
+                      Exemplo para bottons: 25mm, 32mm, 37mm, 44mm e 58mm. O preço base aparece na vitrine como “a partir de”.
+                    </p>
+                  </>
+                )}
+              </div>
+
               <h3 style={subtituloBloco}>Fotos e vídeo</h3>
               <div style={urlGrid}>
                 {renderCampoUrl("image_url_1", "Imagem 1")}
@@ -551,7 +742,7 @@ const subtitulo = {
 
 const resumoGrid = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   gap: 16,
   marginBottom: 18,
 };
@@ -704,6 +895,13 @@ const badgeRosa = {
   background: "#ec1971",
   color: "#fff",
   borderColor: "#ec1971",
+};
+
+const badgeRoxo = {
+  ...badgeClaro,
+  background: "#f0ebff",
+  color: "#7b1fa2",
+  borderColor: "#ded2ff",
 };
 
 const botaoIcone = {
@@ -890,6 +1088,83 @@ const previewVazio = {
   justifyContent: "center",
   textAlign: "center",
   padding: 18,
+};
+
+const variacoesBox = {
+  border: "1px solid #f1d6e3",
+  borderRadius: 18,
+  padding: 16,
+  background: "#fffafd",
+  marginBottom: 18,
+};
+
+const checkboxVariacao = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  fontWeight: 800,
+  color: "#5a4851",
+  marginBottom: 14,
+};
+
+const variacoesLista = {
+  display: "grid",
+  gap: 10,
+  marginTop: 4,
+};
+
+const variacaoLinha = {
+  display: "grid",
+  gridTemplateColumns: "34px 1.2fr 0.65fr 1fr 38px",
+  gap: 10,
+  alignItems: "center",
+  background: "#fff",
+  border: "1px solid #f1d6e3",
+  borderRadius: 14,
+  padding: 10,
+};
+
+const variacaoNumero = {
+  width: 28,
+  height: 28,
+  borderRadius: 999,
+  display: "grid",
+  placeItems: "center",
+  background: "#fff0f6",
+  color: "#ec1971",
+  fontWeight: 900,
+  fontSize: 13,
+};
+
+const botaoRemoverVariacao = {
+  width: 34,
+  height: 34,
+  borderRadius: 10,
+  border: "none",
+  background: "#fff0f6",
+  color: "#ec1971",
+  fontSize: 22,
+  lineHeight: 1,
+  cursor: "pointer",
+  fontWeight: 900,
+};
+
+const botaoAdicionarVariacao = {
+  marginTop: 12,
+  border: "1px solid #ec1971",
+  background: "#fff",
+  color: "#ec1971",
+  padding: "11px 16px",
+  borderRadius: 12,
+  cursor: "pointer",
+  fontWeight: 900,
+};
+
+const ajudaVariacao = {
+  margin: "10px 0 0",
+  color: "#806b78",
+  fontSize: 13,
+  lineHeight: 1.5,
 };
 
 const checkboxLinha = {
