@@ -33,7 +33,6 @@ export default function Loja() {
   const [midiaIndex, setMidiaIndex] = useState(0);
   const [formularioAberto, setFormularioAberto] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
-  const [variacaoSelecionada, setVariacaoSelecionada] = useState(null);
   const [salvandoSolicitacao, setSalvandoSolicitacao] = useState(false);
   const [dadosSolicitacao, setDadosSolicitacao] = useState({
     name: "",
@@ -97,74 +96,29 @@ export default function Loja() {
     return `55${numero}`;
   }
 
+  function registrarConversaoWhatsApp(url) {
+    const abrirWhatsApp = () => {
+      window.location.href = url;
+    };
+
+    if (window.gtag) {
+      window.gtag("event", "conversion", {
+        send_to: "AW-18195282845/0LjFCOHi5r0cEJ33l-RD",
+        event_callback: abrirWhatsApp,
+      });
+
+      setTimeout(abrirWhatsApp, 900);
+      return;
+    }
+
+    abrirWhatsApp();
+  }
+
   function formatarPreco(valor) {
     return Number(valor || 0).toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
-  }
-
-  function variacoesProduto(produto) {
-    if (!produto || !Array.isArray(produto.variations)) return [];
-
-    return produto.variations
-      .map((variacao, index) => {
-        const nome =
-          variacao.name ||
-          variacao.option ||
-          variacao.label ||
-          variacao.title ||
-          `Opção ${index + 1}`;
-
-        return {
-          id: `${nome}-${index}`,
-          name: String(nome).trim(),
-          price: Number(variacao.price || variacao.value || produto.price || 0),
-          note:
-            variacao.note ||
-            variacao.observation ||
-            variacao.description ||
-            "",
-        };
-      })
-      .filter((variacao) => variacao.name);
-  }
-
-  function produtoTemVariacoes(produto) {
-    return Boolean(produto?.has_variations) && variacoesProduto(produto).length > 0;
-  }
-
-  function primeiraVariacaoProduto(produto) {
-    return variacoesProduto(produto)[0] || null;
-  }
-
-  function etiquetaVariacao(produto) {
-    return produto?.variation_label || produto?.variation_name || "Opção";
-  }
-
-  function precoProduto(produto, variacao = null) {
-    if (produtoTemVariacoes(produto) && variacao?.price) {
-      return Number(variacao.price || 0);
-    }
-
-    return Number(produto?.price || 0);
-  }
-
-  function precoCardProduto(produto) {
-    if (!produtoTemVariacoes(produto)) {
-      return formatarPreco(produto?.price || 0);
-    }
-
-    const variacoes = variacoesProduto(produto);
-    const precos = variacoes
-      .map((variacao) => Number(variacao.price || 0))
-      .filter((preco) => preco > 0);
-
-    const menorPreco = precos.length
-      ? Math.min(...precos)
-      : Number(produto?.price || 0);
-
-    return `A partir de ${formatarPreco(menorPreco)}`;
   }
 
   function imagemProduto(produto) {
@@ -202,7 +156,6 @@ export default function Loja() {
 
   function abrirDetalhesProduto(produto) {
     setMidiaIndex(0);
-    setVariacaoSelecionada(primeiraVariacaoProduto(produto));
     setProdutoAberto(produto);
   }
 
@@ -312,11 +265,8 @@ export default function Loja() {
     }));
   }
 
-  function abrirFormularioPedido(produto = null, variacao = null) {
-    const variacaoFinal = variacao || primeiraVariacaoProduto(produto);
-
+  function abrirFormularioPedido(produto = null) {
     setProdutoSelecionado(produto);
-    setVariacaoSelecionada(variacaoFinal);
     setProdutoAberto(null);
     setDadosSolicitacao({
       name: "",
@@ -325,32 +275,22 @@ export default function Loja() {
       instagram: "",
       address: "",
       description: produto
-        ? variacaoFinal
-          ? `Tenho interesse em personalizar: ${produto.name}. ${etiquetaVariacao(produto)}: ${variacaoFinal.name}.`
-          : `Tenho interesse em personalizar: ${produto.name}.`
+        ? `Tenho interesse em personalizar: ${produto.name}.`
         : "Gostaria de fazer um orçamento personalizado.",
       quantity: 1,
     });
     setFormularioAberto(true);
   }
 
-  function montarMensagemWhatsApp(produto, dados, variacao = null) {
+  function montarMensagemWhatsApp(produto, dados) {
     const nomeProduto = produto?.name || "Orçamento personalizado";
-    const valorProduto = produto
-      ? formatarPreco(precoProduto(produto, variacao))
-      : "A definir";
-    const linhaVariacao =
-      produto && variacao
-        ? `${etiquetaVariacao(produto)}: ${variacao.name}
-`
-        : "";
+    const valorProduto = produto?.price ? formatarPreco(produto.price) : "A definir";
 
     return `Olá! Vim pela loja da ${config.store_name} e gostaria de fazer um orçamento.
 
 ` +
       `Produto: ${nomeProduto}
 ` +
-      linhaVariacao +
       `Quantidade: ${dados.quantity || 1}
 ` +
       `Valor de referência: ${valorProduto}
@@ -395,8 +335,7 @@ ${dados.description}`;
 
     try {
       const quantidade = Number(dadosSolicitacao.quantity || 1);
-      const variacaoFinal = variacaoSelecionada || primeiraVariacaoProduto(produtoSelecionado);
-      const valorUnitario = precoProduto(produtoSelecionado, variacaoFinal);
+      const valorUnitario = Number(produtoSelecionado?.price || 0);
       const valorTotal = valorUnitario * quantidade;
 
       const clienteRef = await addDoc(collection(db, "clients"), {
@@ -421,9 +360,6 @@ ${dados.description}`;
         type: "produto",
         product_id: produtoSelecionado?.id || "",
         product_name: produtoSelecionado?.name || "Orçamento personalizado",
-        product_variation_label: produtoSelecionado && variacaoFinal ? etiquetaVariacao(produtoSelecionado) : "",
-        product_variation_name: variacaoFinal?.name || "",
-        product_variation_price: variacaoFinal?.price || 0,
         quantity: quantidade,
         unit_value: valorUnitario,
         total_value: valorTotal,
@@ -432,25 +368,17 @@ ${dados.description}`;
         status: "aberto",
         source: "Loja",
         seller: "Site",
-        notes: variacaoFinal
-          ? `${etiquetaVariacao(produtoSelecionado)}: ${variacaoFinal.name}\n${dadosSolicitacao.description.trim()}`
-          : dadosSolicitacao.description.trim(),
+        notes: dadosSolicitacao.description.trim(),
         created_at: new Date(),
       });
 
-      const mensagem = montarMensagemWhatsApp(
-        produtoSelecionado,
-        dadosSolicitacao,
-        variacaoFinal
-      );
+      const mensagem = montarMensagemWhatsApp(produtoSelecionado, dadosSolicitacao);
 
       setFormularioAberto(false);
       setProdutoSelecionado(null);
-      setVariacaoSelecionada(null);
 
-      window.open(
-        `https://wa.me/${numeroWhatsApp()}?text=${encodeURIComponent(mensagem)}`,
-        "_blank"
+      registrarConversaoWhatsApp(
+        `https://wa.me/${numeroWhatsApp()}?text=${encodeURIComponent(mensagem)}`
       );
     } catch (erro) {
       console.error("Erro ao salvar solicitação:", erro);
@@ -576,15 +504,9 @@ ${dados.description}`;
                   config={config}
                   corPrincipal={corPrincipal}
                   formatarPreco={formatarPreco}
-                  precoCardProduto={precoCardProduto}
-                  produtoTemVariacoes={produtoTemVariacoes}
                   imagemProduto={imagemProduto}
                   onDetalhes={() => abrirDetalhesProduto(produto)}
-                  onWhatsApp={() =>
-                    produtoTemVariacoes(produto)
-                      ? abrirDetalhesProduto(produto)
-                      : abrirFormularioPedido(produto)
-                  }
+                  onWhatsApp={() => abrirFormularioPedido(produto)}
                 />
               ))}
             </div>
@@ -609,15 +531,9 @@ ${dados.description}`;
                   config={config}
                   corPrincipal={corPrincipal}
                   formatarPreco={formatarPreco}
-                  precoCardProduto={precoCardProduto}
-                  produtoTemVariacoes={produtoTemVariacoes}
                   imagemProduto={imagemProduto}
                   onDetalhes={() => abrirDetalhesProduto(produto)}
-                  onWhatsApp={() =>
-                    produtoTemVariacoes(produto)
-                      ? abrirDetalhesProduto(produto)
-                      : abrirFormularioPedido(produto)
-                  }
+                  onWhatsApp={() => abrirFormularioPedido(produto)}
                 />
               ))
             )}
@@ -725,17 +641,10 @@ ${dados.description}`;
             </p>
 
             <div style={leadResumoProduto}>
-              <div>
-                <strong>{produtoSelecionado?.name || "Orçamento personalizado"}</strong>
-                {produtoSelecionado && variacaoSelecionada && (
-                  <small style={leadVariacaoTexto}>
-                    {etiquetaVariacao(produtoSelecionado)}: {variacaoSelecionada.name}
-                  </small>
-                )}
-              </div>
+              <strong>{produtoSelecionado?.name || "Orçamento personalizado"}</strong>
               <span>
-                {produtoSelecionado
-                  ? formatarPreco(precoProduto(produtoSelecionado, variacaoSelecionada))
+                {produtoSelecionado?.price
+                  ? formatarPreco(produtoSelecionado.price)
                   : "Valor a definir"}
               </span>
             </div>
@@ -840,11 +749,6 @@ ${dados.description}`;
                 produtoAberto.description ||
                 produtoAberto.short_description ||
                 "";
-              const variacoes = variacoesProduto(produtoAberto);
-              const temVariacoes = produtoTemVariacoes(produtoAberto);
-              const variacaoAtual =
-                variacaoSelecionada || primeiraVariacaoProduto(produtoAberto);
-              const precoAtual = precoProduto(produtoAberto, variacaoAtual);
 
               return (
                 <div style={modalGrid}>
@@ -934,47 +838,8 @@ ${dados.description}`;
 
                     {config.show_prices && (
                       <h3 style={{ ...modalPreco, color: corPrincipal }}>
-                        {temVariacoes ? "A partir de " : ""}
-                        {formatarPreco(precoAtual)}
+                        {formatarPreco(produtoAberto.price)}
                       </h3>
-                    )}
-
-                    {temVariacoes && (
-                      <div style={variacoesBox}>
-                        <strong style={variacoesTitulo}>
-                          Escolha {etiquetaVariacao(produtoAberto).toLowerCase()}:
-                        </strong>
-
-                        <div style={variacoesGrid}>
-                          {variacoes.map((variacao, index) => {
-                            const selecionada =
-                              (variacaoAtual?.name || "") === variacao.name;
-
-                            return (
-                              <button
-                                key={`${variacao.name}-${index}`}
-                                type="button"
-                                onClick={() => setVariacaoSelecionada(variacao)}
-                                style={{
-                                  ...variacaoBotao,
-                                  ...(selecionada
-                                    ? {
-                                        borderColor: corPrincipal,
-                                        background: "#fff0f7",
-                                        boxShadow:
-                                          "0 10px 24px rgba(236,25,113,0.12)",
-                                      }
-                                    : {}),
-                                }}
-                              >
-                                <span>{variacao.name}</span>
-                                <strong>{formatarPreco(variacao.price)}</strong>
-                                {variacao.note && <small>{variacao.note}</small>}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
                     )}
 
                     <div style={modalDescricaoBox}>
@@ -1003,7 +868,7 @@ ${dados.description}`;
                     </ul>
 
                     <button
-                      onClick={() => abrirFormularioPedido(produtoAberto, variacaoAtual)}
+                      onClick={() => abrirFormularioPedido(produtoAberto)}
                       style={{ ...botaoRosaGrande, background: corPrincipal }}
                     >
                       💬 Pedir pelo WhatsApp
@@ -1019,17 +884,7 @@ ${dados.description}`;
   );
 }
 
-function ProdutoCard({
-  produto,
-  config,
-  corPrincipal,
-  formatarPreco,
-  precoCardProduto,
-  produtoTemVariacoes,
-  imagemProduto,
-  onDetalhes,
-  onWhatsApp,
-}) {
+function ProdutoCard({ produto, config, corPrincipal, formatarPreco, imagemProduto, onDetalhes, onWhatsApp }) {
   return (
     <div style={produtoCard}>
       <div style={produtoImagemBox}>
@@ -1042,16 +897,8 @@ function ProdutoCard({
         <h3 style={produtoNome}>{produto.name}</h3>
         <p style={produtoDescricao}>{produto.short_description || "Produto personalizado feito sob encomenda."}</p>
         <div style={precoBox}>
-          {config.show_prices && (
-            <strong style={{ ...produtoPreco, color: corPrincipal }}>
-              {precoCardProduto ? precoCardProduto(produto) : formatarPreco(produto.price)}
-            </strong>
-          )}
-          <span style={produtoObservacao}>
-            {produtoTemVariacoes?.(produto)
-              ? "Escolha a opção no produto"
-              : "Personalizado sob orçamento"}
-          </span>
+          {config.show_prices && <strong style={{ ...produtoPreco, color: corPrincipal }}>{formatarPreco(produto.price)}</strong>}
+          <span style={produtoObservacao}>Personalizado sob orçamento</span>
         </div>
         <div style={produtoAcoes}>
           <button onClick={onDetalhes} style={{ ...botaoOutline, color: corPrincipal }}>Ver produto</button>
@@ -1199,50 +1046,6 @@ const leadTextarea = {
   resize: "vertical",
   color: "#8b1747",
 };
-
-
-const leadVariacaoTexto = {
-  display: "block",
-  marginTop: "4px",
-  color: "#9b687f",
-  fontSize: "13px",
-  fontWeight: "800",
-};
-
-const variacoesBox = {
-  background: "#fff",
-  border: "1px solid #f6cfe0",
-  borderRadius: "20px",
-  padding: "18px",
-  marginBottom: "18px",
-};
-
-const variacoesTitulo = {
-  display: "block",
-  color: "#8b1747",
-  marginBottom: "12px",
-};
-
-const variacoesGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
-  gap: "10px",
-};
-
-const variacaoBotao = {
-  border: "1px solid #f6cfe0",
-  background: "#fff8fb",
-  color: "#4d3542",
-  borderRadius: "16px",
-  padding: "12px",
-  cursor: "pointer",
-  display: "flex",
-  flexDirection: "column",
-  gap: "4px",
-  textAlign: "left",
-  fontWeight: "800",
-};
-
 
 const modalOverlay = { position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "grid", placeItems: "center", padding: "20px" };
 const modal = {
