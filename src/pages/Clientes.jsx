@@ -15,6 +15,7 @@ const clienteInicial = {
   instagram: "",
   city: "",
   address: "",
+  birthday: "",
   notes: "",
 };
 
@@ -107,6 +108,22 @@ export default function Clientes() {
     }
   }
 
+  function formatarDataNascimento(valor) {
+    if (!valor) return "";
+
+    try {
+      const partes = String(valor).split("-");
+
+      if (partes.length === 3) {
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+      }
+
+      return String(valor);
+    } catch {
+      return String(valor || "");
+    }
+  }
+
   function pedidosDoCliente(clienteSelecionado) {
     const whatsappCliente = limparNumero(clienteSelecionado.whatsapp);
     const nomeCliente = String(clienteSelecionado.name || "").toLowerCase().trim();
@@ -165,7 +182,8 @@ export default function Clientes() {
       String(clienteItem.name || "").toLowerCase().includes(termo) ||
       String(clienteItem.whatsapp || "").toLowerCase().includes(termo) ||
       String(clienteItem.instagram || "").toLowerCase().includes(termo) ||
-      String(clienteItem.city || "").toLowerCase().includes(termo)
+      String(clienteItem.city || "").toLowerCase().includes(termo) ||
+      String(clienteItem.birthday || "").toLowerCase().includes(termo)
     );
   }, [clientes, busca]);
 
@@ -234,6 +252,7 @@ export default function Clientes() {
       instagram: clienteSelecionado.instagram || "",
       city: clienteSelecionado.city || "",
       address: clienteSelecionado.address || "",
+      birthday: clienteSelecionado.birthday || "",
       notes: clienteSelecionado.notes || "",
     });
     setModalAberto(true);
@@ -338,6 +357,7 @@ export default function Clientes() {
         <tr>
           <th style={th}>Cliente</th>
           <th style={th}>WhatsApp</th>
+          <th style={th}>Nascimento</th>
           <th style={th}>Pedidos</th>
           <th style={th}>Total gasto</th>
           <th style={th}>Último pedido</th>
@@ -358,6 +378,10 @@ export default function Clientes() {
 
               <td style={td}>
                 {clienteItem.whatsapp || "-"}
+              </td>
+
+              <td style={td}>
+                {clienteItem.birthday ? formatarDataNascimento(clienteItem.birthday) : "-"}
               </td>
 
               <td style={td}>
@@ -481,6 +505,16 @@ export default function Clientes() {
                     value={cliente.city}
                     onChange={(e) => atualizarCliente("city", e.target.value)}
                     placeholder="São Paulo/SP"
+                    style={inputStyle}
+                  />
+                </div>
+
+                <div style={campoModal}>
+                  <label>Data de nascimento (opcional)</label>
+                  <input
+                    type="date"
+                    value={cliente.birthday}
+                    onChange={(e) => atualizarCliente("birthday", e.target.value)}
                     style={inputStyle}
                   />
                 </div>
@@ -855,7 +889,7 @@ const tabelaContainer = {
 
 const tabela = {
   width: "100%",
-  minWidth: "1100px",
+  minWidth: "1200px",
   borderCollapse: "collapse",
 };
 
