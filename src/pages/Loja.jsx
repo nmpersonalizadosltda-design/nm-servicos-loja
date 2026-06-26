@@ -122,6 +122,41 @@ export default function Loja() {
     });
   }
 
+  function avaliacaoEstaPublica(item) {
+    const status = String(item?.status || "").toLowerCase().trim();
+    return ["aprovado", "aprovada", "publicado", "publicada"].includes(status);
+  }
+
+  function textoSeguro(valor, fallback = "") {
+    return String(valor || fallback).trim();
+  }
+
+  function nomeAvaliacao(item) {
+    return textoSeguro(
+      item?.client_name || item?.name || item?.customer_name,
+      "Cliente NM"
+    );
+  }
+
+  function produtoAvaliacao(item) {
+    return textoSeguro(
+      item?.product_name || item?.product || item?.product_title,
+      "Produto personalizado"
+    );
+  }
+
+  function comentarioAvaliacao(item) {
+    return textoSeguro(
+      item?.comment || item?.text || item?.message || item?.review,
+      "Produto lindo e atendimento impecável."
+    );
+  }
+
+  function estrelasAvaliacao(item) {
+    const nota = Math.max(1, Math.min(5, Number(item?.rating || item?.stars || 5)));
+    return "★".repeat(nota) + "☆".repeat(5 - nota);
+  }
+
   function variacoesProduto(produto) {
     if (!produto || !Array.isArray(produto.variations)) return [];
 
@@ -503,6 +538,8 @@ ${dados.description}`;
     .filter((produto) => produto.featured)
     .slice(0, 4);
 
+  const avaliacoesPublicadas = avaliacoes.filter(avaliacaoEstaPublica);
+
   const corPrincipal = config.primary_color || "#EC1971";
   const corSecundaria = config.secondary_color || "#7B1FA2";
   const bannerUrl = config.banner_url || configPadrao.banner_url;
@@ -660,28 +697,24 @@ ${dados.description}`;
               </div>
 
               <div style={avaliacoesGrid}>
-                {avaliacoes.filter((item) => item.status === "aprovado").length > 0 ? (
-                  avaliacoes
-                    .filter((item) => item.status === "aprovado")
-                    .slice(0, 3)
-                    .map((item) => (
-                      <div key={item.id} style={reviewCard}>
-                        <div style={{ ...estrelas, color: corPrincipal }}>★★★★★</div>
-                        <p>
-                          “
-                          {item.comment ||
-                            item.text ||
-                            "Produto lindo e atendimento impecável."}
-                          ”
-                        </p>
-                        <strong>{item.client_name || item.name || "Cliente NM"}</strong>
+                {avaliacoesPublicadas.length > 0 ? (
+                  avaliacoesPublicadas.slice(0, 6).map((item) => (
+                    <div key={item.id} style={reviewCard}>
+                      <div style={{ ...estrelas, color: corPrincipal }}>
+                        {estrelasAvaliacao(item)}
                       </div>
-                    ))
+                      <p>“{comentarioAvaliacao(item)}”</p>
+                      <strong>{nomeAvaliacao(item)}</strong>
+                      <span style={reviewProduto}>{produtoAvaliacao(item)}</span>
+                    </div>
+                  ))
                 ) : (
-                  <>
-                    <Review texto="Produto lindo e atendimento impecável." />
-                    <Review texto="Ficou perfeito, do jeitinho que eu queria. Atendimento ótimo e acabamento lindo." />
-                  </>
+                  <div style={reviewCard}>
+                    <div style={{ ...estrelas, color: corPrincipal }}>★★★★★</div>
+                    <p>“Produto lindo e atendimento impecável.”</p>
+                    <strong>Cliente NM</strong>
+                    <span style={reviewProduto}>Produto personalizado</span>
+                  </div>
                 )}
               </div>
             </section>
@@ -1135,6 +1168,7 @@ const passoCard = { padding: "28px 20px", borderRadius: "20px", textAlign: "cent
 const avaliacoesBox = { marginTop: "70px" };
 const avaliacoesGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "18px" };
 const reviewCard = { background: "#fff", border: "1px solid #f6cfe0", borderRadius: "18px", padding: "24px", textAlign: "center", boxShadow: "0 8px 24px rgba(236,25,113,0.06)" };
+const reviewProduto = { display: "block", marginTop: "8px", color: "#9b687f", fontSize: "13px", fontWeight: "800" };
 const estrelas = { color: "#EC1971", letterSpacing: "3px" };
 const ctaFinal = { marginTop: "70px", color: "#fff", borderRadius: "22px", padding: "38px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "20px" };
 const botaoClaro = { border: "none", background: "#fff", color: "#EC1971", padding: "14px 24px", borderRadius: "999px", fontWeight: "900", cursor: "pointer" };
