@@ -312,9 +312,11 @@ function formatarMoeda(valor) {
 }
 
 const layout = {
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: "220px minmax(0, 1fr)",
   minHeight: "100vh",
-  width: "100vw",
+  width: "100%",
+  maxWidth: "100vw",
   background: "#fff8fb",
   color: "#1f1f29",
   fontFamily: "Inter, Arial, sans-serif",
@@ -322,43 +324,50 @@ const layout = {
 };
 
 const sidebar = {
-  width: "260px",
+  width: "220px",
+  minWidth: "220px",
   background: "#fff",
   borderRight: "1px solid #f4cfe0",
-  padding: "32px 28px",
+  padding: "24px 18px",
   boxSizing: "border-box",
-  position: "fixed",
+  position: "sticky",
   left: 0,
   top: 0,
-  bottom: 0,
+  height: "100vh",
   overflowY: "auto",
+  overflowX: "hidden",
+  zIndex: 30,
 };
 
 const logo = {
   color: "#ec1971",
-  fontSize: "28px",
-  margin: "0 0 34px",
+  fontSize: "24px",
+  margin: "0 0 26px",
+  lineHeight: "1.1",
 };
 
 const nav = {
   display: "flex",
   flexDirection: "column",
-  gap: "10px",
+  gap: "8px",
 };
 
 const menuButton = {
+  width: "100%",
   border: "none",
   background: "transparent",
   color: "#282833",
-  padding: "15px 18px",
-  borderRadius: "14px",
+  padding: "13px 14px",
+  borderRadius: "13px",
   textAlign: "left",
   cursor: "pointer",
-  fontSize: "17px",
-  fontWeight: "600",
+  fontSize: "15px",
+  fontWeight: "700",
   display: "flex",
   gap: "10px",
   alignItems: "center",
+  boxSizing: "border-box",
+  whiteSpace: "nowrap",
 };
 
 const menuButtonAtivo = {
@@ -368,139 +377,154 @@ const menuButtonAtivo = {
 };
 
 const verLoja = {
-  marginTop: "42px",
+  marginTop: "34px",
   border: "none",
   background: "transparent",
   color: "#ec1971",
-  fontSize: "17px",
+  fontSize: "15px",
   fontWeight: "900",
   cursor: "pointer",
+  padding: "10px 12px",
 };
 
 const conteudo = {
-  marginLeft: "260px",
-  width: "calc(100vw - 260px)",
+  width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
   minHeight: "100vh",
-  padding: "48px 60px",
+  padding: "28px 32px 42px",
   boxSizing: "border-box",
   background: "#fff8fb",
+  overflowX: "hidden",
 };
 
 const dashboard = {
-  maxWidth: "1240px",
+  width: "100%",
+  maxWidth: "1120px",
   margin: "0 auto",
+  minWidth: 0,
 };
 
 const hero = {
   background: "linear-gradient(135deg, #ec1971, #8b1fb2, #07313f)",
   color: "#fff",
-  borderRadius: "34px",
-  padding: "54px 40px",
+  borderRadius: "26px",
+  padding: "34px 28px",
   textAlign: "center",
-  boxShadow: "0 22px 60px rgba(236,25,113,0.18)",
+  boxShadow: "0 16px 40px rgba(236,25,113,0.16)",
+  overflow: "hidden",
 };
 
 const badge = {
   display: "inline-block",
   background: "rgba(255,255,255,0.18)",
-  padding: "12px 24px",
+  padding: "9px 18px",
   borderRadius: "999px",
   fontWeight: "900",
-  fontSize: "20px",
-  marginBottom: "18px",
+  fontSize: "16px",
+  marginBottom: "14px",
 };
 
 const heroTitulo = {
-  fontSize: "44px",
-  margin: "0 0 12px",
+  fontSize: "34px",
+  margin: "0 0 10px",
+  lineHeight: "1.1",
 };
 
 const heroTexto = {
-  fontSize: "22px",
-  lineHeight: "1.5",
-  maxWidth: "850px",
-  margin: "0 auto 28px",
+  fontSize: "17px",
+  lineHeight: "1.45",
+  maxWidth: "760px",
+  margin: "0 auto 22px",
 };
 
 const botaoLoja = {
   border: "none",
   background: "#fff",
   color: "#ec1971",
-  padding: "16px 30px",
-  borderRadius: "16px",
-  fontSize: "17px",
+  padding: "13px 24px",
+  borderRadius: "14px",
+  fontSize: "15px",
   fontWeight: "900",
   cursor: "pointer",
 };
 
 const cardsGrid = {
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "22px",
-  marginTop: "34px",
+  gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: "16px",
+  marginTop: "26px",
+  width: "100%",
+  minWidth: 0,
 };
 
 const card = {
   background: "#fff",
   border: "1px solid #f4cfe0",
-  borderRadius: "22px",
-  padding: "26px",
+  borderRadius: "18px",
+  padding: "20px 18px",
   textAlign: "center",
-  boxShadow: "0 14px 35px rgba(236,25,113,0.08)",
+  boxShadow: "0 10px 24px rgba(236,25,113,0.07)",
   cursor: "pointer",
   transition: "transform 0.2s ease, box-shadow 0.2s ease",
   color: "#1f1f29",
+  minWidth: 0,
+  width: "100%",
+  boxSizing: "border-box",
 };
 
 const cardIcon = {
-  width: "54px",
-  height: "54px",
-  borderRadius: "18px",
+  width: "46px",
+  height: "46px",
+  borderRadius: "16px",
   background: "#fff1f7",
   display: "grid",
   placeItems: "center",
-  margin: "0 auto 14px",
-  fontSize: "26px",
+  margin: "0 auto 12px",
+  fontSize: "22px",
 };
 
 const cardValue = {
   display: "block",
-  fontSize: "28px",
+  fontSize: "24px",
   color: "#ec1971",
-  marginBottom: "8px",
+  marginBottom: "7px",
   fontWeight: "950",
+  overflowWrap: "anywhere",
 };
 
 const cardAction = {
   display: "inline-block",
   color: "#ec1971",
   fontWeight: "900",
-  marginTop: "12px",
-  fontSize: "13px",
+  marginTop: "10px",
+  fontSize: "12px",
 };
 
 const fluxoBox = {
   background: "#fff",
   border: "1px solid #f4cfe0",
-  borderRadius: "24px",
-  padding: "30px",
-  marginTop: "34px",
-  boxShadow: "0 14px 35px rgba(236,25,113,0.06)",
+  borderRadius: "20px",
+  padding: "24px",
+  marginTop: "26px",
+  boxShadow: "0 10px 24px rgba(236,25,113,0.06)",
+  minWidth: 0,
 };
 
 const fluxoGrid = {
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: "18px",
-  marginTop: "20px",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: "14px",
+  marginTop: "18px",
 };
 
 const fluxoItem = {
   background: "#fff1f7",
   border: "1px solid #f4cfe0",
-  borderRadius: "18px",
-  padding: "18px",
+  borderRadius: "16px",
+  padding: "15px",
   display: "flex",
-  gap: "12px",
+  gap: "10px",
   alignItems: "center",
+  minWidth: 0,
 };
