@@ -122,6 +122,27 @@ export default function Loja() {
     });
   }
 
+  function otimizarImagem(url, largura = 800) {
+    const imagem = String(url || "").trim();
+
+    if (!imagem) return "";
+
+    if (!imagem.includes("res.cloudinary.com") || !imagem.includes("/upload/")) {
+      return imagem;
+    }
+
+    const larguraSegura = Math.max(120, Number(largura) || 800);
+
+    if (imagem.includes("/upload/f_auto") || imagem.includes("/upload/q_auto")) {
+      return imagem;
+    }
+
+    return imagem.replace(
+      "/upload/",
+      `/upload/f_auto,q_auto:good,w_${larguraSegura},c_limit/`
+    );
+  }
+
   function avaliacaoEstaPublica(item) {
     const status = String(item?.status || "").toLowerCase().trim();
     return ["aprovado", "aprovada", "publicado", "publicada"].includes(status);
@@ -549,7 +570,13 @@ ${dados.description}`;
       <header style={topo}>
         <div style={marcaBox}>
           {config.logo_url ? (
-            <img src={config.logo_url} alt={config.store_name} style={logoImagem} />
+            <img
+              src={otimizarImagem(config.logo_url, 180)}
+              alt={config.store_name}
+              style={logoImagem}
+              loading="eager"
+              decoding="async"
+            />
           ) : (
             <div style={{ ...logo, background: corPrincipal }}>NM</div>
           )}
@@ -583,7 +610,13 @@ ${dados.description}`;
 
       <main style={container}>
         <section style={hero}>
-          <img src={bannerUrl} alt={config.store_name} style={bannerImagem} />
+          <img
+            src={otimizarImagem(bannerUrl, 1600)}
+            alt={config.store_name}
+            style={bannerImagem}
+            loading="eager"
+            decoding="async"
+          />
         </section>
 
         <p style={subHero}>{config.store_subtitle}</p>
@@ -628,6 +661,7 @@ ${dados.description}`;
                   precoCardProduto={precoCardProduto}
                   produtoTemVariacoes={produtoTemVariacoes}
                   imagemProduto={imagemProduto}
+                  otimizarImagem={otimizarImagem}
                   onDetalhes={() => abrirDetalhesProduto(produto)}
                   onWhatsApp={() =>
                     produtoTemVariacoes(produto)
@@ -661,6 +695,7 @@ ${dados.description}`;
                   precoCardProduto={precoCardProduto}
                   produtoTemVariacoes={produtoTemVariacoes}
                   imagemProduto={imagemProduto}
+                  otimizarImagem={otimizarImagem}
                   onDetalhes={() => abrirDetalhesProduto(produto)}
                   onWhatsApp={() =>
                     produtoTemVariacoes(produto)
@@ -899,13 +934,16 @@ ${dados.description}`;
                         <video
                           src={midiaAtual.url}
                           controls
+                          preload="metadata"
                           style={modalVideo}
                         />
                       ) : (
                         <img
-                          src={midiaAtual.url}
+                          src={otimizarImagem(midiaAtual.url, 1100)}
                           alt={produtoAberto.name}
                           style={modalImagem}
+                          loading="eager"
+                          decoding="async"
                         />
                       )
                     ) : (
@@ -960,9 +998,11 @@ ${dados.description}`;
                             <span style={miniaturaVideo}>▶</span>
                           ) : (
                             <img
-                              src={midia.url}
+                              src={otimizarImagem(midia.url, 180)}
                               alt={`Imagem ${index + 1}`}
                               style={miniaturaImagem}
+                              loading="lazy"
+                              decoding="async"
                             />
                           )}
                         </button>
@@ -1072,6 +1112,7 @@ function ProdutoCard({
   precoCardProduto,
   produtoTemVariacoes,
   imagemProduto,
+  otimizarImagem,
   onDetalhes,
   onWhatsApp,
 }) {
@@ -1079,7 +1120,17 @@ function ProdutoCard({
     <div style={produtoCard}>
       <div style={produtoImagemBox}>
         {produto.featured && <span style={{ ...destaqueBadge, background: corPrincipal }}>Destaque</span>}
-        {imagemProduto(produto) ? <img src={imagemProduto(produto)} alt={produto.name} style={produtoImagem} /> : <div style={semImagem}>✨</div>}
+        {imagemProduto(produto) ? (
+          <img
+            src={otimizarImagem(imagemProduto(produto), 600)}
+            alt={produto.name}
+            style={produtoImagem}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <div style={semImagem}>✨</div>
+        )}
       </div>
 
       <div style={produtoInfo}>
