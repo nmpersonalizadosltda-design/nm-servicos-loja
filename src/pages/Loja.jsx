@@ -928,7 +928,12 @@ ${dados.description}`;
 
               return (
                 <div style={modalGrid}>
-                  <div style={modalImagemBox}>
+                  <div
+                    style={{
+                      ...modalImagemBox,
+                      aspectRatio: midiaAtual?.type === "video" ? "9 / 16" : "4 / 5",
+                    }}
+                  >
                     {midiaAtual ? (
                       midiaAtual.type === "video" ? (
                         <video
@@ -1205,7 +1210,7 @@ const gridProdutos = { display: "grid", gridTemplateColumns: "repeat(auto-fill, 
 const gridDestaques = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "24px" };
 const produtoCard = { background: "#fff", borderRadius: "18px", overflow: "hidden", border: "1px solid #f6cfe0", boxShadow: "0 10px 30px rgba(236,25,113,0.08)" };
 const produtoImagemBox = { height: "250px", background: "#ffe5f0", position: "relative", overflow: "hidden" };
-const produtoImagem = { width: "100%", height: "100%", objectFit: "cover" };
+const produtoImagem = { width: "100%", height: "100%", objectFit: "contain", background: "#fff", display: "block" };
 const semImagem = { width: "100%", height: "100%", display: "grid", placeItems: "center", fontSize: "42px", background: "#ffe5f0" };
 const destaqueBadge = { position: "absolute", right: "10px", top: "10px", color: "#fff", padding: "6px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: "900", zIndex: 2 };
 const produtoInfo = { padding: "24px 20px 22px", textAlign: "center" };
@@ -1371,7 +1376,7 @@ const modalImagemBox = {
 const modalImagem = {
   width: "100%",
   height: "100%",
-  objectFit: "cover",
+  objectFit: "contain",
   display: "block",
   background: "#fff",
 };
@@ -1379,6 +1384,7 @@ const modalVideo = {
   width: "100%",
   height: "100%",
   objectFit: "contain",
+  display: "block",
   background: "#000",
 };
 
@@ -1436,8 +1442,9 @@ const miniaturaBotao = {
 const miniaturaImagem = {
   width: "100%",
   height: "100%",
-  objectFit: "cover",
+  objectFit: "contain",
   display: "block",
+  background: "#fff",
 };
 
 const miniaturaVideo = {
