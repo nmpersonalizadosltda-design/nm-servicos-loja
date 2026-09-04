@@ -73,11 +73,7 @@ export default function ProdutosPagina() {
         ...documento.data(),
       }));
 
-      const produtosDisponiveis = listaProdutos.filter(
-        (item) => item.available !== false
-      );
-
-      setProdutos(produtosDisponiveis);
+      setProdutos(listaProdutos.filter((item) => item.available !== false));
       setAvaliacoes(listaReviews.filter((item) => item.status !== "oculto"));
     } catch (erro) {
       console.error("Erro ao carregar página do produto:", erro);
@@ -107,21 +103,23 @@ export default function ProdutosPagina() {
   }, [produtos, slug]);
 
   useEffect(() => {
-    if (produto) {
-      setMidiaIndex(0);
-      setVariacaoSelecionada(primeiraVariacaoProduto(produto));
-      setDadosSolicitacao((prev) => ({
-        ...prev,
-        description: primeiraVariacaoProduto(produto)
-          ? `Tenho interesse em personalizar: ${produto.name}. ${etiquetaVariacao(
-              produto
-            )}: ${primeiraVariacaoProduto(produto).name}.`
-          : `Tenho interesse em personalizar: ${produto.name}.`,
-        quantity: 1,
-      }));
+    if (!produto) return;
 
-      document.title = `${produto.name} | ${config.store_name}`;
-    }
+    const primeiraVariacao = primeiraVariacaoProduto(produto);
+
+    setMidiaIndex(0);
+    setVariacaoSelecionada(primeiraVariacao);
+    setDadosSolicitacao((prev) => ({
+      ...prev,
+      description: primeiraVariacao
+        ? `Tenho interesse em personalizar: ${produto.name}. ${etiquetaVariacao(
+            produto
+          )}: ${primeiraVariacao.name}.`
+        : `Tenho interesse em personalizar: ${produto.name}.`,
+      quantity: 1,
+    }));
+
+    document.title = `${produto.name} | ${config.store_name}`;
   }, [produto, config.store_name]);
 
   function limparNumero(valor) {
@@ -229,8 +227,77 @@ export default function ProdutosPagina() {
     return Number(produtoAtual?.price || 0);
   }
 
+  function normalizarMidiaImagem(valor, index = 0) {
+    if (!valor) return null;
+
+    if (typeof valor === "string") {
+      return {
+        type: "image",
+        url: valor,
+        fit: "contain",
+        positionX: 50,
+        positionY: 50,
+        zoom: 1,
+      };
+    }
+
+    const url = valor.url || valor.src || valor.image_url || valor.image || "";
+
+    if (!url) return null;
+
+    return {
+      type: "image",
+      url,
+      fit: valor.fit || valor.objectFit || valor.image_fit || "contain",
+      positionX: Number(valor.positionX ?? valor.posX ?? valor.x ?? 50),
+      positionY: Number(valor.positionY ?? valor.posY ?? valor.y ?? 50),
+      zoom: Number(valor.zoom || valor.scale || 1),
+      index,
+    };
+  }
+
+  function imagemConfigProduto(produtoAtual, index = 0) {
+    const numeroImagem = index + 1;
+
+    return {
+      fit:
+        produtoAtual?.[`image_fit_${numeroImagem}`] ||
+        produtoAtual?.image_fit ||
+        produtoAtual?.object_fit ||
+        "contain",
+      positionX: Number(
+        produtoAtual?.[`image_position_x_${numeroImagem}`] ??
+          produtoAtual?.image_position_x ??
+          produtoAtual?.imagePositionX ??
+          50
+      ),
+      positionY: Number(
+        produtoAtual?.[`image_position_y_${numeroImagem}`] ??
+          produtoAtual?.image_position_y ??
+          produtoAtual?.imagePositionY ??
+          50
+      ),
+      zoom: Number(
+        produtoAtual?.[`image_zoom_${numeroImagem}`] ??
+          produtoAtual?.image_zoom ??
+          produtoAtual?.imageZoom ??
+          1
+      ),
+    };
+  }
+
   function imagensProduto(produtoAtual) {
     if (!produtoAtual) return [];
+
+    const imagensArray = Array.isArray(produtoAtual.images)
+      ? produtoAtual.images
+      : Array.isArray(produtoAtual.imagens)
+      ? produtoAtual.imagens
+      : [];
+
+    const imagensDoArray = imagensArray
+      .map((imagem, index) => normalizarMidiaImagem(imagem, index))
+      .filter(Boolean);
 
     const urls = [
       produtoAtual.image_url_1,
@@ -245,7 +312,24 @@ export default function ProdutosPagina() {
       .map((url) => String(url).trim())
       .filter(Boolean);
 
-    return [...new Set(urls)];
+    const imagensAntigas = urls.map((url, index) => {
+      const configImagem = imagemConfigProduto(produtoAtual, index);
+      return {
+        type: "image",
+        url,
+        ...configImagem,
+      };
+    });
+
+    const todas = [...imagensDoArray, ...imagensAntigas];
+    const vistas = new Set();
+
+    return todas.filter((imagem) => {
+      const chave = imagem.url;
+      if (vistas.has(chave)) return false;
+      vistas.add(chave);
+      return true;
+    });
   }
 
   function videoProduto(produtoAtual) {
@@ -259,11 +343,7 @@ export default function ProdutosPagina() {
   }
 
   function midiasProduto(produtoAtual) {
-    const imagens = imagensProduto(produtoAtual).map((url) => ({
-      type: "image",
-      url,
-    }));
-
+    const imagens = imagensProduto(produtoAtual);
     const video = videoProduto(produtoAtual);
 
     if (video) {
@@ -394,40 +474,24 @@ export default function ProdutosPagina() {
 
     const linhaVariacao =
       produto && variacao
-        ? `${etiquetaVariacao(produto)}: ${variacao.name}
-`
+        ? `${etiquetaVariacao(produto)}: ${variacao.name}\n`
         : "";
 
-    return `Olá! Vim pela loja da ${config.store_name} e gostaria de fazer um orçamento.
-
-` +
-      `Produto: ${nomeProduto}
-` +
+    return (
+      `Olá! Vim pela loja da ${config.store_name} e gostaria de fazer um orçamento.\n\n` +
+      `Produto: ${nomeProduto}\n` +
       linhaVariacao +
-      `Quantidade: ${dados.quantity || 1}
-` +
-      `Valor de referência: ${valorProduto}
-
-` +
-      `Link do produto:
-${window.location.href}
-
-` +
-      `Meus dados:
-` +
-      `Nome: ${dados.name}
-` +
-      `Telefone: ${dados.whatsapp}
-` +
-      `E-mail: ${dados.email || "Não informado"}
-` +
-      `Instagram: ${dados.instagram || "Não informado"}
-` +
-      `Endereço: ${dados.address || "Não informado"}
-
-` +
-      `Descrição do pedido:
-${dados.description}`;
+      `Quantidade: ${dados.quantity || 1}\n` +
+      `Valor de referência: ${valorProduto}\n\n` +
+      `Link do produto:\n${window.location.href}\n\n` +
+      `Meus dados:\n` +
+      `Nome: ${dados.name}\n` +
+      `Telefone: ${dados.whatsapp}\n` +
+      `E-mail: ${dados.email || "Não informado"}\n` +
+      `Instagram: ${dados.instagram || "Não informado"}\n` +
+      `Endereço: ${dados.address || "Não informado"}\n\n` +
+      `Descrição do pedido:\n${dados.description}`
+    );
   }
 
   async function salvarSolicitacao(e) {
@@ -566,6 +630,11 @@ ${dados.description}`;
     "";
   const avaliacoesPublicadas = avaliacoes.filter(avaliacaoEstaPublica);
 
+  const midiaFit = midiaAtual?.type === "image" ? midiaAtual.fit || "contain" : "contain";
+  const midiaPositionX = midiaAtual?.type === "image" ? midiaAtual.positionX ?? 50 : 50;
+  const midiaPositionY = midiaAtual?.type === "image" ? midiaAtual.positionY ?? 50 : 50;
+  const midiaZoom = midiaAtual?.type === "image" ? midiaAtual.zoom || 1 : 1;
+
   if (carregando) {
     return (
       <div style={pagina}>
@@ -636,12 +705,7 @@ ${dados.description}`;
       <main style={container}>
         <section style={produtoHero}>
           <div>
-            <div
-              style={{
-                ...midiaPrincipalBox,
-                aspectRatio: midiaAtual?.type === "video" ? "9 / 16" : "4 / 5",
-              }}
-            >
+            <div style={midiaPrincipalBox}>
               {midiaAtual ? (
                 midiaAtual.type === "video" ? (
                   <video
@@ -654,7 +718,12 @@ ${dados.description}`;
                   <img
                     src={otimizarImagem(midiaAtual.url, 1300)}
                     alt={produto.name}
-                    style={midiaImagem}
+                    style={{
+                      ...midiaImagem,
+                      objectFit: midiaFit,
+                      objectPosition: `${midiaPositionX}% ${midiaPositionY}%`,
+                      transform: `scale(${midiaZoom})`,
+                    }}
                     loading="eager"
                     decoding="async"
                   />
@@ -697,8 +766,7 @@ ${dados.description}`;
                     onClick={() => setMidiaIndex(index)}
                     style={{
                       ...miniaturaBotao,
-                      borderColor:
-                        index === midiaIndex ? corPrincipal : "#f6cfe0",
+                      borderColor: index === midiaIndex ? corPrincipal : "#f6cfe0",
                     }}
                   >
                     {midia.type === "video" ? (
@@ -745,8 +813,7 @@ ${dados.description}`;
 
                 <div style={variacoesGrid}>
                   {variacoes.map((variacao, index) => {
-                    const selecionada =
-                      (variacaoAtual?.name || "") === variacao.name;
+                    const selecionada = (variacaoAtual?.name || "") === variacao.name;
 
                     return (
                       <button
@@ -759,8 +826,7 @@ ${dados.description}`;
                             ? {
                                 borderColor: corPrincipal,
                                 background: "#fff0f7",
-                                boxShadow:
-                                  "0 10px 24px rgba(236,25,113,0.12)",
+                                boxShadow: "0 10px 24px rgba(236,25,113,0.12)",
                               }
                             : {}),
                         }}
@@ -896,9 +962,7 @@ ${dados.description}`;
         >
           <div>
             <h2>Gostou desse produto?</h2>
-            <p>
-              Envie sua ideia pelo WhatsApp e receba um orçamento personalizado.
-            </p>
+            <p>Envie sua ideia pelo WhatsApp e receba um orçamento personalizado.</p>
           </div>
 
           <button onClick={abrirFormularioPedido} style={botaoClaro}>
@@ -964,9 +1028,7 @@ ${dados.description}`;
                 Telefone / WhatsApp *
                 <input
                   value={dadosSolicitacao.whatsapp}
-                  onChange={(e) =>
-                    atualizarSolicitacao("whatsapp", e.target.value)
-                  }
+                  onChange={(e) => atualizarSolicitacao("whatsapp", e.target.value)}
                   style={leadInput}
                   placeholder="(11) 99999-9999"
                 />
@@ -987,9 +1049,7 @@ ${dados.description}`;
                 Instagram
                 <input
                   value={dadosSolicitacao.instagram}
-                  onChange={(e) =>
-                    atualizarSolicitacao("instagram", e.target.value)
-                  }
+                  onChange={(e) => atualizarSolicitacao("instagram", e.target.value)}
                   style={leadInput}
                   placeholder="@seuperfil"
                 />
@@ -1001,9 +1061,7 @@ ${dados.description}`;
                   type="number"
                   min="1"
                   value={dadosSolicitacao.quantity}
-                  onChange={(e) =>
-                    atualizarSolicitacao("quantity", e.target.value)
-                  }
+                  onChange={(e) => atualizarSolicitacao("quantity", e.target.value)}
                   style={leadInput}
                 />
               </label>
@@ -1012,9 +1070,7 @@ ${dados.description}`;
                 Endereço
                 <input
                   value={dadosSolicitacao.address}
-                  onChange={(e) =>
-                    atualizarSolicitacao("address", e.target.value)
-                  }
+                  onChange={(e) => atualizarSolicitacao("address", e.target.value)}
                   style={leadInput}
                   placeholder="Rua, número, bairro, cidade"
                 />
@@ -1025,9 +1081,7 @@ ${dados.description}`;
               Descreva o que você quer personalizar *
               <textarea
                 value={dadosSolicitacao.description}
-                onChange={(e) =>
-                  atualizarSolicitacao("description", e.target.value)
-                }
+                onChange={(e) => atualizarSolicitacao("description", e.target.value)}
                 style={leadTextarea}
                 placeholder="Tema, nome, cor, tamanho, data, detalhes da arte..."
               />
@@ -1146,6 +1200,7 @@ const midiaImagem = {
   objectFit: "contain",
   display: "block",
   background: "#fff",
+  transformOrigin: "center center",
 };
 
 const midiaVideo = {
