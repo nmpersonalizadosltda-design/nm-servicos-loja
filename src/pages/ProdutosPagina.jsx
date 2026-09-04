@@ -630,10 +630,10 @@ export default function ProdutosPagina() {
     "";
   const avaliacoesPublicadas = avaliacoes.filter(avaliacaoEstaPublica);
 
-  const midiaFit = midiaAtual?.type === "image" ? midiaAtual.fit || "contain" : "contain";
-  const midiaPositionX = midiaAtual?.type === "image" ? midiaAtual.positionX ?? 50 : 50;
-  const midiaPositionY = midiaAtual?.type === "image" ? midiaAtual.positionY ?? 50 : 50;
-  const midiaZoom = midiaAtual?.type === "image" ? midiaAtual.zoom || 1 : 1;
+  const midiaFit = "contain";
+  const midiaPositionX = 50;
+  const midiaPositionY = 50;
+  const midiaZoom = 1;
 
   if (carregando) {
     return (
