@@ -157,6 +157,28 @@ export default function ProdutosPagina() {
     });
   }
 
+  function formatarPrazoProducao(valor) {
+    const texto = String(valor || "").trim();
+
+    if (!texto) return "A combinar";
+
+    const numeroPuro = texto.match(/^(\d+)$/);
+
+    if (numeroPuro) {
+      const dias = Number(numeroPuro[1]);
+      return `${dias} ${dias === 1 ? "dia útil" : "dias úteis"}`;
+    }
+
+    const numeroComDia = texto.match(/^(\d+)\s*(dia|dias)$/i);
+
+    if (numeroComDia) {
+      const dias = Number(numeroComDia[1]);
+      return `${dias} ${dias === 1 ? "dia útil" : "dias úteis"}`;
+    }
+
+    return texto;
+  }
+
   function otimizarImagem(url, largura = 1000) {
     const imagem = String(url || "").trim();
 
@@ -844,8 +866,8 @@ export default function ProdutosPagina() {
             <div style={infoRapidaGrid}>
               {produto.production_time && (
                 <div style={infoRapidaCard}>
-                  <strong>Prazo</strong>
-                  <span>{produto.production_time}</span>
+                  <strong>Prazo de produção</strong>
+                  <span>{formatarPrazoProducao(produto.production_time)}</span>
                 </div>
               )}
 
