@@ -1185,30 +1185,36 @@ const midiaPrincipalBox = {
   background: "#fff",
   border: "1px solid #f6cfe0",
   borderRadius: "26px",
-  overflow: "hidden",
+  overflow: "visible",
   position: "relative",
   width: "100%",
-  aspectRatio: "4 / 5",
+  minHeight: "540px",
+  padding: "14px",
   display: "grid",
   placeItems: "center",
   boxShadow: "0 18px 45px rgba(236,25,113,0.10)",
 };
 
 const midiaImagem = {
-  width: "100%",
-  height: "100%",
+  width: "auto",
+  height: "auto",
+  maxWidth: "100%",
+  maxHeight: "680px",
   objectFit: "contain",
   display: "block",
   background: "#fff",
+  borderRadius: "20px",
   transformOrigin: "center center",
 };
 
 const midiaVideo = {
   width: "100%",
-  height: "100%",
+  height: "auto",
+  maxHeight: "680px",
   objectFit: "contain",
   display: "block",
   background: "#000",
+  borderRadius: "20px",
 };
 
 const semImagem = {
