@@ -273,6 +273,29 @@ export default function Loja() {
     );
   }
 
+  function gerarSlugProduto(texto) {
+    return String(texto || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+  }
+
+  function abrirPaginaProduto(produto) {
+    const slugProduto = String(
+      produto?.slug || gerarSlugProduto(produto?.name)
+    ).trim();
+
+    if (!slugProduto) {
+      abrirDetalhesProduto(produto);
+      return;
+    }
+
+    window.location.href = `/produto/${encodeURIComponent(slugProduto)}`;
+  }
+
   function abrirDetalhesProduto(produto) {
     setMidiaIndex(0);
     setVariacaoSelecionada(primeiraVariacaoProduto(produto));
@@ -662,10 +685,10 @@ ${dados.description}`;
                   produtoTemVariacoes={produtoTemVariacoes}
                   imagemProduto={imagemProduto}
                   otimizarImagem={otimizarImagem}
-                  onDetalhes={() => abrirDetalhesProduto(produto)}
+                  onDetalhes={() => abrirPaginaProduto(produto)}
                   onWhatsApp={() =>
                     produtoTemVariacoes(produto)
-                      ? abrirDetalhesProduto(produto)
+                      ? abrirPaginaProduto(produto)
                       : abrirFormularioPedido(produto)
                   }
                 />
@@ -696,10 +719,10 @@ ${dados.description}`;
                   produtoTemVariacoes={produtoTemVariacoes}
                   imagemProduto={imagemProduto}
                   otimizarImagem={otimizarImagem}
-                  onDetalhes={() => abrirDetalhesProduto(produto)}
+                  onDetalhes={() => abrirPaginaProduto(produto)}
                   onWhatsApp={() =>
                     produtoTemVariacoes(produto)
-                      ? abrirDetalhesProduto(produto)
+                      ? abrirPaginaProduto(produto)
                       : abrirFormularioPedido(produto)
                   }
                 />
