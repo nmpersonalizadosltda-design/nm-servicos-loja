@@ -13,7 +13,11 @@ const pedidoInicial = {
   client_id: "",
   client_name: "",
   client_whatsapp: "",
+  product_id: "",
   product_name: "",
+  variation_name: "",
+  variation_id: "",
+  variation_value: "",
   quantity: 1,
   unit_value: "",
   total_value: 0,
@@ -35,6 +39,7 @@ const pedidoInicial = {
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [produtos, setProdutos] = useState([]);
   const [pedido, setPedido] = useState(pedidoInicial);
   const [pedidoEditandoId, setPedidoEditandoId] = useState(null);
   const [busca, setBusca] = useState("");
@@ -47,6 +52,7 @@ export default function Pedidos() {
   useEffect(() => {
     carregarPedidos();
     carregarClientes();
+    carregarProdutos();
   }, []);
 
   async function carregarPedidos() {
@@ -76,8 +82,232 @@ export default function Pedidos() {
     setClientes(lista);
   }
 
+  async function carregarProdutos() {
+    try {
+      const snapshot = await getDocs(collection(db, "products"));
+      const lista = snapshot.docs.map((documento) => ({
+        id: documento.id,
+        ...documento.data(),
+      }));
+
+      lista.sort((a, b) =>
+        obterNomeProduto(a).localeCompare(obterNomeProduto(b), "pt-BR")
+      );
+
+      setProdutos(lista);
+    } catch (erro) {
+      console.error("Erro ao carregar produtos:", erro);
+      setProdutos([]);
+    }
+  }
+
   function numero(valor) {
-    return Number(String(valor || 0).replace(",", "."));
+    if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
+
+    const texto = String(valor ?? "")
+      .trim()
+      .replace(/\s/g, "")
+      .replace(/^R\$/i, "");
+
+    if (!texto) return 0;
+
+    // Aceita 64.90, 64,90, 1.234,56 e 1,234.56
+    if (texto.includes(",") && texto.includes(".")) {
+      if (texto.lastIndexOf(",") > texto.lastIndexOf(".")) {
+        return Number(texto.replace(/\./g, "").replace(",", ".")) || 0;
+      }
+      return Number(texto.replace(/,/g, "")) || 0;
+    }
+
+    if (texto.includes(",")) {
+      return Number(texto.replace(",", ".")) || 0;
+    }
+
+    return Number(texto) || 0;
+  }
+
+  function obterNomeProduto(produto) {
+    return String(
+      produto?.name ||
+      produto?.title ||
+      produto?.product_name ||
+      produto?.nome ||
+      "Produto sem nome"
+    ).trim();
+  }
+
+  function obterPrecoProduto(produto) {
+    const candidatos = [
+      produto?.price,
+      produto?.base_price,
+      produto?.starting_price,
+      produto?.value,
+      produto?.unit_value,
+      produto?.preco,
+      produto?.preco_base,
+    ];
+
+    for (const valor of candidatos) {
+      const convertido = numero(valor);
+      if (convertido > 0) return convertido;
+    }
+
+    return 0;
+  }
+
+  function obterVariacoes(produto) {
+    const origem =
+      produto?.variations ||
+      produto?.variacoes ||
+      produto?.product_variations ||
+      produto?.options ||
+      [];
+
+    if (!Array.isArray(origem)) return [];
+
+    return origem
+      .map((variacao, index) => {
+        if (typeof variacao === "string") {
+          return {
+            id: String(index),
+            nome: variacao,
+            preco: 0,
+            observacao: "",
+          };
+        }
+
+        const nome = String(
+          variacao?.name ||
+          variacao?.label ||
+          variacao?.title ||
+          variacao?.variation_name ||
+          variacao?.value ||
+          variacao?.option ||
+          variacao?.nome ||
+          `Opção ${index + 1}`
+        ).trim();
+
+        const preco = numero(
+          variacao?.price ??
+          variacao?.value_price ??
+          variacao?.unit_value ??
+          variacao?.preco ??
+          variacao?.valor ??
+          0
+        );
+
+        return {
+          id: String(variacao?.id ?? variacao?.key ?? index),
+          indice: index,
+          nome,
+          preco,
+          observacao:
+            variacao?.note ||
+            variacao?.obs ||
+            variacao?.description ||
+            variacao?.observacao ||
+            "",
+        };
+      })
+      .filter((variacao) => variacao.nome);
+  }
+
+  function obterTituloVariacao(produto) {
+    return String(
+      produto?.variation_name ||
+      produto?.variation_label ||
+      produto?.variacao_nome ||
+      produto?.option_name ||
+      "Variação"
+    ).trim();
+  }
+
+  function selecionarProduto(produtoId) {
+    if (!produtoId) {
+      setPedido((prev) =>
+        recalcularPedido({
+          ...prev,
+          product_id: "",
+          product_name: "",
+          variation_name: "",
+          variation_id: "",
+          variation_id: "",
+          variation_value: "",
+          unit_value: "",
+        })
+      );
+      return;
+    }
+
+    if (produtoId === "manual") {
+      setPedido((prev) =>
+        recalcularPedido({
+          ...prev,
+          product_id: "manual",
+          product_name: "",
+          variation_name: "",
+          variation_id: "",
+          variation_id: "",
+          variation_value: "",
+          unit_value: "",
+        })
+      );
+      return;
+    }
+
+    const produtoSelecionado = produtos.find((item) => item.id === produtoId);
+    if (!produtoSelecionado) return;
+
+    const variacoes = obterVariacoes(produtoSelecionado);
+    const precoBase = obterPrecoProduto(produtoSelecionado);
+
+    setPedido((prev) =>
+      recalcularPedido({
+        ...prev,
+        product_id: produtoSelecionado.id,
+        product_name: obterNomeProduto(produtoSelecionado),
+        variation_name: variacoes.length ? obterTituloVariacao(produtoSelecionado) : "",
+        variation_id: "",
+        variation_value: "",
+        unit_value: variacoes.length ? "" : precoBase || "",
+      })
+    );
+  }
+
+  function selecionarVariacao(valorSelecionado) {
+    const produtoSelecionado = produtos.find((item) => item.id === pedido.product_id);
+    if (!produtoSelecionado) return;
+
+    const variacoes = obterVariacoes(produtoSelecionado);
+    const variacao = variacoes.find(
+      (item) =>
+        item.id === valorSelecionado ||
+        String(item.indice) === String(valorSelecionado)
+    );
+
+    if (!variacao) {
+      setPedido((prev) =>
+        recalcularPedido({
+          ...prev,
+          variation_id: "",
+          variation_value: "",
+          unit_value: "",
+        })
+      );
+      return;
+    }
+
+    const preco = variacao.preco || obterPrecoProduto(produtoSelecionado);
+
+    setPedido((prev) =>
+      recalcularPedido({
+        ...prev,
+        variation_name: obterTituloVariacao(produtoSelecionado),
+        variation_id: variacao.id,
+        variation_value: variacao.nome,
+        unit_value: preco || "",
+      })
+    );
   }
 
   function recalcularPedido(dados) {
@@ -328,7 +558,11 @@ export default function Pedidos() {
       client_id: pedidoSelecionado.client_id || "",
       client_name: pedidoSelecionado.client_name || "",
       client_whatsapp: pedidoSelecionado.client_whatsapp || "",
+      product_id: pedidoSelecionado.product_id || "",
       product_name: pedidoSelecionado.product_name || "",
+      variation_name: pedidoSelecionado.variation_name || "",
+      variation_id: pedidoSelecionado.variation_id || "",
+      variation_value: pedidoSelecionado.variation_value || "",
       quantity: quantidade,
       unit_value: unitario,
       total_value: total,
@@ -397,7 +631,8 @@ export default function Pedidos() {
 
 Passando para confirmar seu pedido na NM Serviços:
 
-Produto: ${pedidoItem.product_name}
+Produto: ${pedidoItem.product_name}${pedidoItem.variation_value ? `
+${pedidoItem.variation_name || "Variação"}: ${pedidoItem.variation_value}` : ""}
 Quantidade: ${pedidoItem.quantity || 1}
 Total: ${formatarPreco(pedidoItem.total_value)}
 Sinal: ${formatarPreco(pedidoItem.signal_value)}
@@ -542,7 +777,9 @@ Observações: ${pedidoItem.notes || "Sem observações"}`;
                     </p>
 
                     <p style={produtoLinha}>
-                      📦 {pedidoItem.product_name || "Produto não informado"} ({pedidoItem.quantity || 1}x)
+                      📦 {pedidoItem.product_name || "Produto não informado"}
+                      {pedidoItem.variation_value ? ` • ${pedidoItem.variation_value}` : ""}
+                      {" "}({pedidoItem.quantity || 1}x)
                     </p>
 
                     <p style={linhaMeta}>
@@ -662,18 +899,104 @@ Observações: ${pedidoItem.notes || "Sem observações"}`;
                 </div>
 
                 <div style={campoModalGrande}>
-                  <label>Produto</label>
-                  <input value={pedido.product_name} onChange={(e) => atualizarPedido("product_name", e.target.value)} style={inputStyle} placeholder="Ex: Planner Personalizado A5" />
+                  <label>Produto cadastrado</label>
+                  <select
+                    value={
+                      pedido.product_id ||
+                      (pedido.product_name ? "manual" : "")
+                    }
+                    onChange={(e) => selecionarProduto(e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">Escolha um produto</option>
+                    {produtos.map((produtoItem) => {
+                      const variacoes = obterVariacoes(produtoItem);
+                      const precoBase = obterPrecoProduto(produtoItem);
+
+                      return (
+                        <option key={produtoItem.id} value={produtoItem.id}>
+                          {obterNomeProduto(produtoItem)}
+                          {variacoes.length > 0
+                            ? ` • ${variacoes.length} opção(ões)`
+                            : precoBase > 0
+                            ? ` • ${formatarPreco(precoBase)}`
+                            : ""}
+                        </option>
+                      );
+                    })}
+                    <option value="manual">Outro / produto manual</option>
+                  </select>
                 </div>
+
+                {(pedido.product_id === "manual" ||
+                  (!pedido.product_id && pedido.product_name)) && (
+                  <div style={campoModalGrande}>
+                    <label>Nome do produto manual</label>
+                    <input
+                      value={pedido.product_name}
+                      onChange={(e) => atualizarPedido("product_name", e.target.value)}
+                      style={inputStyle}
+                      placeholder="Ex: Produto personalizado especial"
+                    />
+                  </div>
+                )}
+
+                {pedido.product_id &&
+                  pedido.product_id !== "manual" &&
+                  (() => {
+                    const produtoSelecionado = produtos.find(
+                      (item) => item.id === pedido.product_id
+                    );
+                    const variacoes = obterVariacoes(produtoSelecionado);
+
+                    if (variacoes.length === 0) return null;
+
+                    return (
+                      <div style={campoModalGrande}>
+                        <label>{obterTituloVariacao(produtoSelecionado)}</label>
+                        <select
+                          value={pedido.variation_id || ""}
+                          onChange={(e) => selecionarVariacao(e.target.value)}
+                          style={inputStyle}
+                        >
+                          <option value="">Escolha uma opção</option>
+                          {variacoes.map((variacao) => (
+                            <option
+                              key={`${variacao.id}-${variacao.nome}`}
+                              value={variacao.id}
+                            >
+                              {variacao.nome}
+                              {variacao.preco > 0
+                                ? ` • ${formatarPreco(variacao.preco)}`
+                                : ""}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })()}
 
                 <div style={campoModal}>
                   <label>Quantidade</label>
-                  <input type="number" min="1" value={pedido.quantity} onChange={(e) => atualizarPedido("quantity", e.target.value)} style={inputStyle} />
+                  <input
+                    type="number"
+                    min="1"
+                    value={pedido.quantity}
+                    onChange={(e) => atualizarPedido("quantity", e.target.value)}
+                    style={inputStyle}
+                  />
                 </div>
 
                 <div style={campoModal}>
                   <label>Valor unitário</label>
-                  <input type="number" step="0.01" value={pedido.unit_value} onChange={(e) => atualizarPedido("unit_value", e.target.value)} style={inputStyle} placeholder="64.90" />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={pedido.unit_value}
+                    onChange={(e) => atualizarPedido("unit_value", e.target.value)}
+                    style={inputStyle}
+                    placeholder="0.00"
+                  />
                 </div>
 
                 <div style={campoModal}>
